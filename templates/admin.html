@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APEC Meeting Rooms - Admin</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+    .toolbar .field{display:flex;flex-direction:column}
+    .table-scroll{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:12px}
+    .danger{background:#c62828;color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .danger:hover{filter:brightness(0.95)}
+    .muted{color:var(--muted)}
+    .pill{background:#2b2b2b;border:1px solid var(--line);padding:2px 8px;border-radius:999px}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">APEC CEO Summit - Admin</div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="link">Booking</a>
+      <a href="/launcher" class="link">Display</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2 class="title">Manage Bookings</h2>
+
+    <form class="toolbar" method="get" action="/admin">
+      <label class="field">
+        <span>Date</span>
+        <select name="date" id="date">
+          {% for d in event_dates %}
+            <option value="{{ d }}" {% if d == date %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Room (optional)</span>
+        <select name="room" id="room">
+          <option value="" {% if not room %}selected{% endif %}>All</option>
+          {% for code,label in room_label.items() %}
+            <option value="{{ code }}" {% if room == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="button" type="submit" style="align-self:flex-end">Filter</button>
+      {% if room %}
+        <span class="pill">Filtered: {{ room_label[room] }}</span>
+      {% endif %}
+    </form>
+
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:80px">ID</th>
+            <th style="width:120px">Date</th>
+            <th style="width:140px">Room</th>
+            <th style="width:140px">Tier</th>
+            <th>Company</th>
+            <th style="width:140px">Email</th>
+            <th style="width:140px">Time</th>
+            <th style="width:120px">Blocks</th>
+            <th style="width:110px">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td>{{ it.id }}</td>
+            <td>{{ it.date }}</td>
+            <td>{{ room_label[it.room_code] if it.room_code in room_label else it.room_code }}</td>
+            <td>{{ it.tier }}</td>
+            <td>{{ it.company }}</td>
+            <td class="muted">{{ it.email }}</td>
+            <td>{{ "%02d:00" % it.start_hour }} – {{ "%02d:00" % it.end_hour }}</td>
+            <td>{{ it.blocks }}</td>
+            <td>
+              <form method="post" action="/admin/delete" onsubmit="return confirm('Delete booking #{{ it.id }}?');">
+                <input type="hidden" name="booking_id" value="{{ it.id }}">
+                <!-- 현재 필터 유지용 -->
+                <input type="hidden" name="date" value="{{ date }}">
+                {% if room %}<input type="hidden" name="room" value="{{ room }}">{% endif %}
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not items %}
+          <tr><td colspan="9" class="muted" style="text-align:center">No bookings.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</body>
+</html>
+

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APEC Meeting Rooms - Display Launcher</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">APEC CEO Summit - Meeting Rooms</div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="link">Booking</a>
+      <a href="/admin" class="link">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2 class="title">Quick Display Launcher</h2>
+    
+    <!-- 날짜 선택 버튼 -->
+    <div class="row" id="dateButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+
+    <!-- 티어별 룸 버튼 -->
+    <div id="tierBlocks" style="display:grid;gap:20px"></div>
+  </section>
+</main>
+
+<script>
+  const EVENT_DATES = {{ event_dates|tojson|safe }};
+  const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
+  const ROOM_LABEL = {{ room_label|tojson|safe }};
+  let chosenDate = EVENT_DATES[0];
+
+  const dateRow = document.getElementById('dateButtons');
+  const tierBlocks = document.getElementById('tierBlocks');
+
+  function renderDates(){
+    dateRow.innerHTML = EVENT_DATES.map(d => `
+      <button class="chip chip-accent" data-date="${d}">${d}</button>
+    `).join('');
+    dateRow.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        chosenDate = btn.dataset.date;
+        renderTiers();
+        dateRow.querySelectorAll('button').forEach(x=>x.classList.remove('chip-active'));
+        btn.classList.add('chip-active');
+      });
+    });
+    dateRow.querySelector(`button[data-date="${chosenDate}"]`).classList.add('chip-active');
+  }
+
+  function renderTiers(){
+    tierBlocks.innerHTML = Object.entries(ROOMS_BY_TIER).map(([tier,rooms])=>{
+      const roomBtns = rooms.map(r=>{
+        const href = `/display?room=${encodeURIComponent(r)}&date=${encodeURIComponent(chosenDate)}`;
+        return `<a class="chip chip-gold" href="${href}">${ROOM_LABEL[r]||r}</a>`;
+      }).join('');
+      return `
+        <div class="panel">
+          <div class="panel-title">${tier}</div>
+          <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">${roomBtns}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderDates();
+  renderTiers();
+</script>
+</body>
+</html>
+

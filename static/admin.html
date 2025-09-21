@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>APEC Booking – Admin</title>
+<style>
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0f172a;color:#e5e7eb}
+header{background:#1e293b;padding:12px 20px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+main{max-width:980px;margin:20px auto;padding:0 16px}
+section{margin-top:16px}
+.card{background:#111827;border:1px solid #334155;border-radius:12px;padding:16px}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #334155;padding:6px;text-align:center;font-size:14px}
+th{background:#111827;position:sticky;top:0}
+button{padding:6px 10px;border-radius:8px;background:#ef4444;border:none;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+<div>APEC Booking – Admin</div>
+<nav><a href="/" style="color:#9ca3af">Booking</a></nav>
+</header>
+<main>
+<section class="card">
+<div style="margin-bottom:8px">Bookings</div>
+<label>Date <input type="date" id="viewDate"></label>
+<button id="refresh" type="button" style="margin-left:8px">Refresh</button>
+<div id="grid" style="overflow-x:auto;margin-top:10px"></div>
+</section>
+</main>
+<script>
+function fmt(h){return String(h).padStart(2,'0')+':00'}
+async function load(date){ const r=await fetch(`/api/availability?date=${date}`); return await r.json(); }
+async function del(id){ const r=await fetch(`/api/bookings/${id}`,{method:'DELETE'}); if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.detail||'delete failed'); } }
+function render(rows){ let html='<table><thead><tr><th>ID</th><th>Company</th><th>Email</th><th>Tier</th><th>Room</th><th>Date</th><th>Time</th><th></th></tr></thead><tbody>'; for(const b of rows){ html+=`<tr><td>${b.id}</td><td>${b.company}</td><td>${b.email}</td><td>${b.tier}</td><td>${b.room_code}</td><td>${b.date}</td><td>${fmt(b.start_hour)}–${fmt(b.end_hour)}</td><td><button data-id="${b.id}">Delete</button></td></tr>`;} html+='</tbody></table>'; document.getElementById('grid').innerHTML=html; document.querySelectorAll('button[data-id]').forEach(btn=>btn.addEventListener('click', async ()=>{ try{ await del(btn.getAttribute('data-id')); await refresh(); }catch(e){ alert(e.message);} })); }
+async function refresh(){ const d=document.getElementById('viewDate').value; const rows=await load(d); render(rows); }
+const today=new Date().toISOString().slice(0,10); document.getElementById('viewDate').value=today; refresh(); document.getElementById('refresh').addEventListener('click',refresh);
+</script>
+</body>
+</html>

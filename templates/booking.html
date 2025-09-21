@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APEC Meeting Rooms - Booking</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    .date-field{position:relative}
+    .date-open-btn{
+      position:absolute; left:10px; top:50%; transform:translateY(-50%);
+      height:28px; padding:0 8px; border-radius:8px;
+      border:1px solid var(--line); background:transparent; color:var(--muted);
+      cursor:pointer; line-height:26px;
+    }
+    .date-field input[type="date"]{ padding-left:48px }
+    .hidden{display:none}
+    .locked { pointer-events:none; background:#222; color:#aaa; }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">APEC CEO Summit - Meeting Rooms</div>
+    </div>
+    <nav class="nav">
+      <a href="/launcher" class="link">Display</a>
+      <a href="/admin" class="link">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2 class="title">New Booking</h2>
+    <div id="flash" class="flash" style="display:none"></div>
+
+    <form id="bookingForm" method="POST" action="/book" class="grid">
+      <!-- Company (Other 선택 가능) -->
+      <label class="field" id="companyField">
+        <span>Company</span>
+        <select required name="company" id="company"></select>
+      </label>
+
+      <label class="field hidden" id="companyOtherField">
+        <span>Enter company name</span>
+        <input type="text" name="company_other" id="company_other" placeholder="Type company name" />
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input required type="email" name="email" id="email" placeholder="name@example.com" />
+      </label>
+
+      <label class="field date-field" id="dateField">
+        <span>Date</span>
+        <input required type="date" name="date" id="date" min="2025-10-28" max="2025-10-30" />
+        <button class="date-open-btn" type="button" id="openDate" aria-label="Open calendar">📅</button>
+      </label>
+
+      <label class="field">
+        <span>Tier</span>
+        <input id="tierView" disabled />
+        <input type="hidden" name="tier" id="tier" />
+      </label>
+
+      <label class="field">
+        <span>Room</span>
+        <select required name="room" id="room"></select>
+      </label>
+
+      <label class="field">
+        <span>Start Time</span>
+        <select required name="start_hour" id="start"></select>
+      </label>
+
+      <label class="field">
+        <span>Blocks</span>
+        <select required name="blocks" id="blocks">
+          <option value="1">1 (60 min)</option>
+          <option value="2">2 (120 min)</option>
+        </select>
+      </label>
+
+      <div class="hint" style="grid-column:1/-1">
+        Operating hours <b>09:00–18:00</b> · Event <b>Oct 28–30</b> · Max per day per company: <b>2 hours</b>
+      </div>
+
+      <!-- ✅ 하루 2시간 제한 경고 -->
+      <div id="dailyWarn" class="flash" style="display:none; grid-column:1/-1"></div>
+
+      <button class="button primary" type="submit" style="grid-column:1/-1">Reserve</button>
+      <div id="msg" class="muted" style="grid-column:1/-1"></div>
+    </form>
+  </section>
+
+  <section class="card board" id="board">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-weight:800">Schedule</div>
+        <span class="pill" id="boardLabel"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="muted">Tap an <b>Available</b> row</div>
+        <span class="badge">Auto refresh: 1 min</span>
+        <span id="lastUpdated" class="badge">Updated: —</span>
+      </div>
+    </div>
+    <div class="table-scroll"><div id="boardGrid"></div></div>
+  </section>
+</main>
+
+<script>
+  const EVENT_DATES   = {{ event_dates|tojson|safe }};
+  const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
+  const ROOM_LABEL    = {{ room_label|tojson|safe }};
+  const HOURS         = {{ hours|tojson|safe }};
+  const MAX_BLOCKS    = {{ max_blocks|tojson|safe }};
+  const INITIAL_DATE  = {{ initial_date|tojson|safe }};
+
+  const $ = (s, r=document) => r.querySelector(s);
+  const fmt = h => String(h).padStart(2,'0') + ':00';
+
+  let desiredStartFromURL = null;
+
+  // 달력
+  function openCalendarPicker(){
+    const el = $('#date');
+    if (el && typeof el.showPicker === 'function') el.showPicker();
+    else { el.focus(); el.dispatchEvent(new MouseEvent('mousedown',{bubbles:true})); }
+  }
+  $('#openDate').addEventListener('click', openCalendarPicker);
+  $('#dateField').addEventListener('click',(e)=>{
+    if(e.target.id!=='date' && e.target.id!=='openDate') openCalendarPicker();
+  });
+
+  // API helpers
+  async function apiAvailability(date, room){
+    const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}&room=${encodeURIComponent(room)}`);
+    if(!res.ok) throw new Error('failed to load availability');
+    return await res.json();
+  }
+  async function apiDailyCheck(date, company){
+    const r = await fetch(`/api/daily_check?date=${encodeURIComponent(date)}&company=${encodeURIComponent(company)}`);
+    if(!r.ok) return null;
+    return await r.json();
+  }
+
+  // 회사 목록 + Other
+  async function loadCompanies(){
+    const r = await fetch('/api/companies');
+    const j = await r.json();
+    const sel = $('#company');
+    const items = j.items || [];
+    const opts = items.map(it => `<option value="${it.name}" data-tier="${it.tier}">${it.name}</option>`);
+    opts.push(`<option value="Other" data-tier="Other">Other</option>`);
+    sel.innerHTML = opts.join('');
+  }
+  function isOtherSelected(){ return $('#company').value === 'Other'; }
+
+  function enterOtherMode(){
+    $('#companyOtherField').classList.remove('hidden');
+    $('#tierView').value = 'Other';
+    $('#tier').value = 'Other';
+    $('#room').innerHTML = `<option value="Other-Room">${ROOM_LABEL['Other-Room']}</option>`;
+    $('#room').classList.add('locked');
+  }
+  function exitOtherMode(){
+    $('#companyOtherField').classList.add('hidden');
+    $('#room').classList.remove('locked');
+  }
+
+  function applyTierFromCompany(){
+    if(isOtherSelected()){ enterOtherMode(); return; }
+    exitOtherMode();
+    const opt = $('#company option:checked');
+    const tier = opt?.dataset?.tier || '';
+    $('#tierView').value = tier || '(Unknown)';
+    $('#tier').value = tier || '';
+    const rooms = ROOMS_BY_TIER[tier] || [];
+    $('#room').innerHTML = rooms.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
+  }
+
+  // 시작 옵션
+  function computeStartOptions(taken, blocks){
+    const opts = [];
+    for(const h of HOURS){
+      const end = h + blocks;
+      if(end > HOURS[HOURS.length-1] + 1) continue;
+      const overlap = (taken||[]).some(([s,e]) => !(end <= s || e <= h));
+      if(!overlap) opts.push([h,end]);
+    }
+    return opts;
+  }
+  async function refreshStart(){
+    const date = $('#date').value;
+    const room = $('#room').value;
+    const blocks = parseInt($('#blocks').value,10)||1;
+    const startSel = $('#start');
+    startSel.innerHTML = '';
+    if(!date || !room) return;
+
+    try{
+      const data = await apiAvailability(date, room);
+      const opts = computeStartOptions(data.taken||[], blocks);
+      if(!opts.length){
+        startSel.innerHTML = `<option value="">No available slots</option>`;
+        $('#msg').textContent = 'No available start times for the chosen room/date.';
+        return;
+      }
+      startSel.innerHTML = opts.map(([s,e]) => `<option value="${s}">${fmt(s)} – ${fmt(e)}</option>`).join('');
+      if(desiredStartFromURL !== null){
+        const found = opts.find(([s]) => s === desiredStartFromURL);
+        if(found) $('#start').value = String(desiredStartFromURL);
+        desiredStartFromURL = null;
+      }
+      $('#msg').textContent = '';
+    }catch{
+      startSel.innerHTML = `<option value="">Failed to load slots</option>`;
+    }
+  }
+
+  // 보드
+  function renderBoard(date, room, items, blocks){
+    $('#boardLabel').textContent = `${ROOM_LABEL[room]||room} · ${date} · Blocks ${blocks}`;
+    const busyAt = {};
+    (items||[]).forEach(it => { for(let h=it.start_hour; h<it.end_hour; h++) busyAt[h] = {company:it.company,tier:it.tier}; });
+    let html = '<table class="table"><thead><tr><th style="width:160px">Time</th><th>Status</th><th>Company</th></tr></thead><tbody>';
+    for(const h of HOURS){
+      const busy = !!busyAt[h];
+      const status = busy ? '<b class="no">Booked</b>' : '<b class="ok">Available</b>';
+      const company = busy ? `${busyAt[h].company} (${busyAt[h].tier})` : '';
+      html += `<tr data-h="${h}" class="${busy ? '' : 'slot-avail'}">
+        <td>${fmt(h)} – ${fmt(h+1)}</td>
+        <td>${status}</td>
+        <td>${company}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    $('#boardGrid').innerHTML = html;
+
+    const lu = $('#lastUpdated'); if(lu) lu.textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+    $('#boardGrid').querySelectorAll('tr.slot-avail').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        $('#boardGrid').querySelectorAll('tr').forEach(r=>r.classList.remove('slot-picked'));
+        tr.classList.add('slot-picked');
+        const start = parseInt(tr.getAttribute('data-h'),10);
+        $('#start').value = String(start);
+        $('#msg').textContent = `Picked ${fmt(start)} as start.`;
+      });
+      tr.addEventListener('dblclick', ()=>{
+        const start = parseInt(tr.getAttribute('data-h'),10);
+        $('#start').value = String(start);
+        $('#bookingForm').requestSubmit();
+      });
+    });
+  }
+
+  async function refreshAll(){
+    const date = $('#date').value || INITIAL_DATE;
+    const room = $('#room').value;
+    const blocks = parseInt($('#blocks').value,10)||1;
+    if(!date || !room) return;
+    const data = await apiAvailability(date, room);
+    await refreshStart();
+    renderBoard(date, room, data.items||[], blocks);
+  }
+
+  // 하루 2시간 제한 사전 안내/차단
+  async function checkDailyLimit(){
+    const comp = $('#company').value;
+    const date = $('#date').value;
+    const warn = $('#dailyWarn');
+    const btn  = document.querySelector('#bookingForm button[type="submit"]');
+    if(!comp || !date){ warn.style.display='none'; btn.disabled=false; return; }
+
+    try{
+      const j = await apiDailyCheck(date, comp);
+      if(!j || !j.ok){ warn.style.display='none'; btn.disabled=false; return; }
+      const limit = j.limit ?? 2;
+      const already = j.total ?? 0;
+      const want = parseInt($('#blocks').value,10)||1;
+      if (already >= limit){
+        warn.textContent = `Daily limit: ${comp} already has ${already}h booked on ${date}. Max ${limit}h/day.`;
+        warn.style.display = '';
+        btn.disabled = true;
+      } else if (already + want > limit){
+        warn.textContent = `Daily limit: ${comp} has ${already}h on ${date}. You can add only ${limit - already}h more.`;
+        warn.style.display = '';
+        btn.disabled = true;
+      } else {
+        warn.style.display = 'none';
+        btn.disabled = false;
+      }
+    }catch(e){
+      warn.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  // 기본값
+  function defaultDate(){
+    if (INITIAL_DATE) return INITIAL_DATE;
+    const today = new Date().toISOString().slice(0,10);
+    if (today >= EVENT_DATES[0] && today <= EVENT_DATES[EVENT_DATES.length-1]) return today;
+    return EVENT_DATES[0];
+  }
+  function initFromURL(){
+    const p = new URLSearchParams(location.search);
+    if (p.get('ok') === '1'){
+      const f = $('#flash'); f.textContent = 'Booking saved successfully.'; f.style.display = '';
+    }
+    const comp = p.get('company');
+    if (comp){ $('#company').value = comp; if (comp === 'Other'){ $('#companyOtherField').classList.remove('hidden'); $('#company_other').value = p.get('company_other') || ''; } }
+    $('#date').value = p.get('date') || defaultDate();
+    const b = parseInt(p.get('blocks')||'1',10); $('#blocks').value = (b===2?'2':'1');
+    const ps = p.get('picked'); if(ps !== null) { try { desiredStartFromURL = parseInt(ps,10); } catch(_){} }
+  }
+
+  document.addEventListener('change', async (e)=>{
+    if(e.target.id==='company'){
+      applyTierFromCompany();
+      if(isOtherSelected()) $('#company_other').focus();
+      await checkDailyLimit();
+      await refreshAll();
+    }else if(['date','blocks'].includes(e.target.id)){
+      await checkDailyLimit();
+      await refreshAll();
+    }else if(e.target.id==='room'){
+      await refreshAll();
+    }
+  });
+
+  $('#bookingForm').addEventListener('submit', async (ev)=>{
+    // 마지막 방어선: 프런트 체크
+    await checkDailyLimit();
+    const warn = $('#dailyWarn');
+    if (warn.style.display !== 'none'){
+      ev.preventDefault();
+      return false;
+    }
+    $('#msg').textContent='Submitting…';
+  });
+
+  async function init(){
+    await loadCompanies();
+    initFromURL();
+    applyTierFromCompany();
+    await checkDailyLimit();
+    refreshAll().catch(()=>{});
+    setInterval(refreshAll,60000);
+  }
+  init();
+</script>
+</body>
+</html>
+

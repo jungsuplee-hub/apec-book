@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APEC Meeting Rooms - Booking</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+
+<!-- booking.html <head> 끝부분에 추가 -->
+<style>
+  /* Align schedule board theme with display.html */
+  .board table{font-size:18px}
+  .board th,.board td{padding:14px}
+  .badge{
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    color:var(--muted);
+  }
+  .ok{color:#12d18e;font-weight:700}
+  .no{color:#ff7676;font-weight:700}
+</style>
+
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">APEC CEO Summit - Meeting Rooms</div>
+    </div>
+    <nav class="nav">
+      <a href="/launcher" class="link">Display</a>
+      <a href="/admin" class="link">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2 class="title">Book a Room</h2>
+
+    <div id="flash" class="flash" style="display:none"></div>
+
+    <form id="bookingForm" method="POST" action="/book" class="grid">
+      <label class="field">
+        <span>Company</span>
+        <input required name="company" id="company" placeholder="Company" />
+      </label>
+
+      <label class="field">
+        <span>Email</span>
+        <input required type="email" name="email" id="email" placeholder="name@example.com" />
+      </label>
+
+      <label class="field">
+        <span>Tier</span>
+        <select required name="tier" id="tier"></select>
+      </label>
+
+      <label class="field">
+        <span>Date</span>
+        <input required type="date" name="date" id="date" min="2025-10-28" max="2025-10-30" />
+      </label>
+
+      <label class="field">
+        <span>Room</span>
+        <select required name="room" id="room"></select>
+      </label>
+
+      <label class="field">
+        <span>Start</span>
+        <select required name="start_hour" id="start"></select>
+      </label>
+
+      <label class="field">
+        <span>Blocks</span>
+        <select required name="blocks" id="blocks">
+          <option value="1">1 (60 min)</option>
+          <option value="2">2 (120 min)</option>
+        </select>
+      </label>
+
+      <div class="hint">
+        Operating hours <b>06:00–22:00</b> · Event <b>Oct 28–30</b> · Max consecutive blocks: <b>2</b>
+      </div>
+
+      <button class="button primary" type="submit">Submit booking</button>
+      <div id="msg" class="muted"></div>
+    </form>
+  </section>
+
+  <section class="card board" id="board">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><b>Schedule</b> – <span class="pill" id="boardLabel"></span></div>
+      <div class="muted">Click an <b>Available</b> row to pick start (dbl-click to submit).</div>
+    </div>
+    <div id="boardGrid"></div>
+  </section>
+</main>
+
+<script>
+  // Config from server (fallbacks)
+  const EVENT_DATES = {{ event_dates|tojson|safe }};
+  const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
+  const ROOM_LABEL = {{ room_label|tojson|safe }};
+  const HOURS = {{ hours|tojson|safe }};
+  const MAX_BLOCKS = {{ max_blocks|tojson|safe }};
+
+  const $ = (s, r=document) => r.querySelector(s);
+  const fmt = h => String(h).padStart(2,'0') + ':00';
+
+  let desiredStartFromURL = null;
+
+  function fillTiers(){
+    $('#tier').innerHTML = Object.keys(ROOMS_BY_TIER).map(t=>`<option>${t}</option>`).join('');
+  }
+  function fillRooms(){
+    const tier = $('#tier').value;
+    const rooms = ROOMS_BY_TIER[tier] || [];
+    $('#room').innerHTML = rooms.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
+  }
+
+  async function apiAvailability(date, room){
+    const res = await fetch(`/api/availability?date=${date}&room=${room}`);
+    return await res.json();
+  }
+
+  function computeStartOptions(taken, blocks){
+    const opts = [];
+    for(const h of HOURS){
+      const end = h + blocks;
+      if (end > HOURS[HOURS.length-1] + 1) continue;
+      const overlap = (taken||[]).some(([s,e]) => !(end <= s || e <= h));
+      if(!overlap) opts.push([h,end]);
+    }
+    return opts;
+  }
+
+  async function refreshStart(){
+    const date = $('#date').value;
+    const room = $('#room').value;
+    const blocks = parseInt($('#blocks').value,10)||1;
+    const startSel = $('#start');
+    startSel.innerHTML = '';
+    if(!date || !room) return;
+
+    try{
+      const data = await apiAvailability(date, room);
+      const opts = computeStartOptions(data.taken||[], blocks);
+      if(!opts.length){
+        startSel.innerHTML = `<option value="">No available slots</option>`;
+        $('#msg').textContent = 'No available start times for the chosen room/date.';
+        return;
+      }
+      startSel.innerHTML = opts.map(([s,e]) => `<option value="${s}">${fmt(s)} – ${fmt(e)}</option>`).join('');
+      if(desiredStartFromURL !== null){
+        const found = opts.find(([s]) => s === desiredStartFromURL);
+        if(found) $('#start').value = String(desiredStartFromURL);
+        desiredStartFromURL = null;
+      }
+      $('#msg').textContent = '';
+    }catch{
+      startSel.innerHTML = `<option value="">Failed to load slots</option>`;
+    }
+  }
+
+  function renderBoard(date, room, items, blocks){
+    $('#boardLabel').textContent = `${ROOM_LABEL[room]||room} • ${date} • Blocks ${blocks}`;
+    const busyAt = {};
+    (items||[]).forEach(it => { for(let h=it.start_hour; h<it.end_hour; h++) busyAt[h]={company:it.company,tier:it.tier}; });
+    let html = '<table><thead><tr><th style="width:160px">Time</th><th>Status</th><th>Company</th></tr></thead><tbody>';
+    for(const h of HOURS){
+      const busy = !!busyAt[h];
+      const rowClass = busy ? '' : 'slot-avail';
+      const status = busy ? 'Booked' : 'Available';
+      const company = busy ? `${busyAt[h].company} (${busyAt[h].tier})` : '';
+      html += `<tr data-h="${h}" class="${rowClass}"><td>${fmt(h)} – ${fmt(h+1)}</td><td>${status}</td><td>${company}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    $('#boardGrid').innerHTML = html;
+
+    $('#boardGrid').querySelectorAll('tr.slot-avail').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        $('#boardGrid').querySelectorAll('tr').forEach(r=>r.classList.remove('slot-picked'));
+        tr.classList.add('slot-picked');
+        const start = parseInt(tr.getAttribute('data-h'),10);
+        $('#start').value = String(start);
+        $('#msg').textContent = `Picked ${fmt(start)} as start.`;
+      });
+      tr.addEventListener('dblclick', ()=>{
+        const start = parseInt(tr.getAttribute('data-h'),10);
+        $('#start').value = String(start);
+        $('#bookingForm').requestSubmit();
+      });
+    });
+  }
+
+  async function refreshAll(){
+    const date = $('#date').value;
+    const room = $('#room').value;
+    const blocks = parseInt($('#blocks').value,10)||1;
+    if(!date || !room) return;
+    const data = await apiAvailability(date, room);
+    await refreshStart();
+    renderBoard(date, room, data.items||[], blocks);
+  }
+
+  function defaultDate(){
+    const today = new Date().toISOString().slice(0,10);
+    if (today >= EVENT_DATES[0] && today <= EVENT_DATES[EVENT_DATES.length-1]) return today;
+    return EVENT_DATES[0];
+  }
+
+  function initFromURL(){
+    const p = new URLSearchParams(location.search);
+    if (p.get('ok') === '1'){
+      const f = $('#flash'); f.textContent = 'Booking saved successfully.'; f.style.display = '';
+    }
+    const tier = p.get('tier');
+    if(tier && ROOMS_BY_TIER[tier]) $('#tier').value = tier;
+    fillRooms();
+    const room = p.get('room');
+    if(room && $('#room').querySelector(`option[value="${room}"]`)) $('#room').value = room;
+    $('#date').value = p.get('date') || defaultDate();
+    const b = parseInt(p.get('blocks')||'1',10); $('#blocks').value = (b === 2 ? '2' : '1');
+    const ps = p.get('picked'); if(ps !== null) desiredStartFromURL = parseInt(ps,10);
+  }
+
+  function init(){
+    fillTiers();
+    initFromURL();
+    refreshAll().catch(()=>{});
+    setInterval(refreshAll, 60000);
+  }
+
+  // Events
+  $('#tier').addEventListener('change', ()=>{ fillRooms(); refreshAll(); });
+  $('#room').addEventListener('change', refreshAll);
+  $('#date').addEventListener('change', refreshAll);
+  $('#blocks').addEventListener('change', refreshAll);
+  $('#bookingForm').addEventListener('submit', ()=>{ $('#msg').textContent='Submitting…'; });
+
+  init();
+</script>
+</body>
+</html>
+

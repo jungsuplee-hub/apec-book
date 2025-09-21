@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APEC – Display</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">Meeting Room Display</div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="link">Booking</a>
+      <a href="/admin" class="link">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card board">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="font-weight:800">{{ room_name }}</div>
+        <span class="pill">{{ date }}</span>
+        <span class="pill">Operating: 09:00–18:00</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="badge">Auto refresh: 1 min</span>
+        <span id="lastUpdated" class="badge">Updated: —</span>
+      </div>
+    </div>
+    <div class="table-scroll"><div id="grid"></div></div>
+  </section>
+</main>
+
+<script>
+  const ROOM   = {{ room|tojson|safe }};
+  const DATE   = {{ date|tojson|safe }};
+  const HOURS  = {{ hours|tojson|safe }};
+  const ITEMS  = {{ (items or [])|tojson|safe }};
+
+  const $ = s => document.querySelector(s);
+  const fmt = h => String(h).padStart(2,'0') + ':00';
+
+  function render(items){
+    const busyAt = {};
+    (items||[]).forEach(it => { for(let h=it.start_hour; h<it.end_hour; h++) busyAt[h] = {company: it.company, tier: it.tier}; });
+    let html = '<table class="table responsive"><thead><tr><th style="width:180px">Time</th><th>Status</th><th>Company</th></tr></thead><tbody>';
+    for(const h of HOURS){
+      const busy = !!busyAt[h];
+      const status = busy ? '<b class="no">Booked</b>' : '<b class="ok">Available</b>';
+      const company = busy ? `${busyAt[h].company} (${busyAt[h].tier})` : '';
+      html += `<tr>
+        <td data-label="Time">${fmt(h)} – ${fmt(h+1)}</td>
+        <td data-label="Status">${status}</td>
+        <td data-label="Company">${company}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    $('#grid').innerHTML = html;
+
+    const ts = new Date().toLocaleTimeString();
+    const lu = $('#lastUpdated'); if(lu) lu.textContent = 'Updated: ' + ts;
+  }
+
+  async function refresh(){
+    try{
+      const r = await fetch(`/api/availability?date=${encodeURIComponent(DATE)}&room=${encodeURIComponent(ROOM)}`);
+      if(!r.ok) throw new Error('api failed');
+      const j = await r.json();
+      render(j.items||[]);
+    }catch(e){ render(ITEMS||[]); }
+  }
+
+  render(ITEMS||[]);
+  setInterval(refresh, 60000);
+</script>
+</body>
+</html>
+

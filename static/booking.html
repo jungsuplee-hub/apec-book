@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+@media(max-width:900px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<div>APEC Meeting Rooms – Booking</div>
+<nav><a href="/admin" style="color:#9ca3af">Admin</a></nav>
+</header>
+<main>
+<section class="card">
+<form id="bookingForm">
+<div class="row">
+<label>Company<input required name="company" placeholder="Company"></label>
+<label>Email<input required type="email" name="email" placeholder="name@example.com"></label>
+</div>
+<div class="row">
+<label>Tier<select name="tier" id="tier"></select></label>
+<label>Date<input required type="date" name="date" id="date"></label>
+</div>
+<div class="row">
+<label>Room<select name="room_code" id="room"></select></label>
+<label>Slot<select name="start_hour" id="slot"></select> <span class="muted">(1h or 2h contiguous)</span></label>
+</div>
+<div class="row">
+<label>Blocks<select name="blocks" id="blocks"><option value="1">1 (60m)</option><option value="2">2 (120m)</option></select></label>
+<div></div>
+</div>
+<div class="muted" style="margin-top:6px">Operating hours 06:00–22:00 · Event window Oct 28–30</div>
+<button type="submit" style="margin-top:10px">Submit booking</button>
+</form>
+<div id="msg" class="muted" style="margin-top:8px"></div>
+</section>
+</main>
+<script>
+const ROOM_LABEL = { 'Indoor-1':'Indoor 1','Indoor-2':'Indoor 2','Outdoor-1':'Outdoor 1','Indoor-3':'Indoor 3','Indoor-4':'Indoor 4','Outdoor-2':'Outdoor 2','Outdoor-3':'Outdoor 3','Outdoor-Annex':'Outdoor Annex','Indoor-5':'Indoor 5'};
+const ROOM_MAP = { 'Diamond':['Indoor-1','Indoor-2','Outdoor-1'], 'Platinum':['Indoor-3','Indoor-4','Outdoor-2'], 'Gold':['Outdoor-3','Outdoor-Annex'], 'General':['Indoor-5'] };
+const EVENT_START='2025-10-28', EVENT_END='2025-10-30';
+
+
+function withinEvent(d){ return (d>=EVENT_START && d<=EVENT_END); }
+function fmt(h){return String(h).padStart(2,'0')+':00'}
+
+
+function fillTier(){ const t=document.getElementById('tier'); t.innerHTML = Object.keys(ROOM_MAP).map(x=>`<option>${x}</option>`).join(''); }
+function fillRooms(){ const t=document.getElementById('tier').value; const sel=document.getElementById('room'); sel.innerHTML = ROOM_MAP[t].map(c=>`<option value="${c}">${ROOM_LABEL[c]}</option>`).join(''); }
+
+
+async function refreshSlots(){
+const tier=document.getElementById('tier').value; const date=document.getElementById('date').value;
+const blk=parseInt(document.getElementById('blocks').value,10)||1; const room=document.getElementById('room').value;
+if(!withinEvent(date)){ document.getElementById('slot').innerHTML=''; return; }
+const res = await fetch(`/api/slots?date=${date}&tier=${tier}`); const data = await res.json();
+const slots = (data[room]||[]).filter(s=>s.blocks===blk).map(s=>`<option value="${s.start}">${fmt(s.start)} – ${fmt(s.start+blk)}</option>`);
+document.getElementById('slot').innerHTML = slots.join('');
+}
+
+
+document.getElementById('tier').addEventListener('change',()=>{fillRooms(); refreshSlots();});
+document.getElementById('room').addEventListener('change',refreshSlots);
+document.getElementById('date').addEventListener('change',refreshSlots);
+document.getElementById('blocks').addEventListener('change',refreshSlots);
+
+
+const today = new Date().toISOString().slice(0,10);
+const defaultDate = (today>=EVENT_START && today<=EVENT_END) ? today : EVENT_START;
+document.getElementById('date').value=defaultDate;
+fillTier(); fillRooms(); await refreshSlots();
+
+
+// submit
+const form=document.getElementById('bookingForm');
+form.addEventListener('submit', async (e)=>{
+e.preventDefault(); const data=Object.fromEntries(new FormData(form).entries());
+if(!withinEvent(data.date)){ document.getElementById('msg').textContent='Date must be within Oct 28–30.'; return; }
+const payload={ company:data.company.trim(), email:data.email.trim(), tier:data.tier, room_code:data.room_code, date:data.date, start_hour:parseInt(data.start_hour,10), blocks:parseInt(data.blocks,10) };
+try{
+const r = await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+const j = await r.json(); if(!r.ok) throw new Error(j.detail||'create failed');
+document.getElementById('msg').textContent = `Booked: ${j.company} / ${ROOM_LABEL[j.room_code]} / ${j.date} ${fmt(j.start_hour)}–${fmt(j.end_hour)}`;
+form.reset(); document.getElementById('date').value=defaultDate; fillTier(); fillRooms(); await refreshSlots();
+}catch(err){ document.getElementById('msg').textContent = 'Failed: '+(err?.message||err); }
+});
+</script>
+</body>
+</html>
