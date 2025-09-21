@@ -36,6 +36,7 @@
   const EVENT_DATES = {{ event_dates|tojson|safe }};
   const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
   const ROOM_LABEL = {{ room_label|tojson|safe }};
+  const TIER_ORDER = {{ tier_order|tojson|safe }};
   let chosenDate = EVENT_DATES[0];
 
   const dateRow = document.getElementById('dateButtons');
@@ -57,18 +58,20 @@
   }
 
   function renderTiers(){
-    tierBlocks.innerHTML = Object.entries(ROOMS_BY_TIER).map(([tier,rooms])=>{
+    tierBlocks.innerHTML = TIER_ORDER.map(tier=>{
+      const rooms = ROOMS_BY_TIER[tier] || [];
       const roomBtns = rooms.map(r=>{
         const href = `/display?room=${encodeURIComponent(r)}&date=${encodeURIComponent(chosenDate)}`;
         return `<a class="chip chip-gold" href="${href}">${ROOM_LABEL[r]||r}</a>`;
       }).join('');
+      if(!rooms.length) return '';
       return `
         <div class="panel">
           <div class="panel-title">${tier}</div>
           <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">${roomBtns}</div>
         </div>
       `;
-    }).join('');
+    }).filter(Boolean).join('');
   }
 
   renderDates();
