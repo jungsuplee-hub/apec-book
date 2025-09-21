@@ -99,7 +99,18 @@ import smtplib
 from email.message import EmailMessage
 from collections import defaultdict
 
-import MySQLdb
+try:
+    import MySQLdb
+except ModuleNotFoundError:  # pragma: no cover - runtime guard for environments without mysqlclient
+    try:
+        import pymysql as MySQLdb
+    except ModuleNotFoundError as exc:
+        print(
+            "Neither 'mysqlclient' (MySQLdb) nor 'PyMySQL' is installed. "
+            "Please install one of them to run this script.",
+            file=sys.stderr,
+        )
+        raise exc
 
 def get_env(name, required=True, cast=str, default=None):
     val = os.environ.get(name, default)
