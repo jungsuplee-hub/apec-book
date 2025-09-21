@@ -15,7 +15,7 @@ from MySQLdb.cursors import DictCursor
 load_dotenv()
 
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
-APP_PORT = int(os.getenv("APP_PORT", "8080"))
+APP_PORT = int(os.getenv("APP_PORT", "80"))
 STORAGE = os.getenv("STORAGE", "mysql")
 
 MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
@@ -41,6 +41,69 @@ ROOM_LABEL = {
     "Outdoor-3": "Outdoor 3",
     "Outdoor-Annex": "Outdoor Annex",
     "Other-Room": "Other Room",
+}
+
+ROOM_DETAILS = {
+    "Indoor-1": {
+        "summary": "Boardroom-style indoor space ideal for executive meetings.",
+        "capacity": 12,
+        "features": ["Dual displays", "Video conferencing", "Private lounge access"],
+        "image": "/static/images/rooms/indoor-suite.svg",
+    },
+    "Indoor-2": {
+        "summary": "Warm lighting and soft seating for collaborative sessions.",
+        "capacity": 10,
+        "features": ["Interactive whiteboard", "Wireless presentation", "In-room refreshments"],
+        "image": "/static/images/rooms/indoor-suite.svg",
+    },
+    "Indoor-3": {
+        "summary": "Flexible indoor space with modular furniture for workshops.",
+        "capacity": 16,
+        "features": ["Modular tables", "Ceiling speakers", "On-demand technical support"],
+        "image": "/static/images/rooms/indoor-suite.svg",
+    },
+    "Indoor-4": {
+        "summary": "Compact meeting room optimised for breakout conversations.",
+        "capacity": 8,
+        "features": ["Digital signage", "Acoustic treatment", "Wireless charging"],
+        "image": "/static/images/rooms/indoor-suite.svg",
+    },
+    "Indoor-5": {
+        "summary": "Lounge-inspired space designed for hybrid discussions.",
+        "capacity": 14,
+        "features": ["360° camera", "Adjustable lighting", "Refreshment bar"],
+        "image": "/static/images/rooms/indoor-suite.svg",
+    },
+    "Outdoor-1": {
+        "summary": "Terrace venue with panoramic skyline views.",
+        "capacity": 20,
+        "features": ["Weather canopy", "Ambient lighting", "Outdoor sound system"],
+        "image": "/static/images/rooms/outdoor-terrace.svg",
+    },
+    "Outdoor-2": {
+        "summary": "Garden pavilion featuring natural décor and privacy screens.",
+        "capacity": 18,
+        "features": ["Climate control", "Garden lounge", "Catering nearby"],
+        "image": "/static/images/rooms/outdoor-terrace.svg",
+    },
+    "Outdoor-3": {
+        "summary": "Open-air lounge perfect for informal networking.",
+        "capacity": 25,
+        "features": ["Live greenery", "Soft seating", "Ambient music"],
+        "image": "/static/images/rooms/outdoor-terrace.svg",
+    },
+    "Outdoor-Annex": {
+        "summary": "Semi-covered annex that blends indoor comfort with fresh air.",
+        "capacity": 15,
+        "features": ["Convertible seating", "Power access", "Decor lighting"],
+        "image": "/static/images/rooms/outdoor-terrace.svg",
+    },
+    "Other-Room": {
+        "summary": "Multi-purpose room allocated for custom requirements.",
+        "capacity": 6,
+        "features": ["Flexible setup", "Privacy screens", "Concierge support"],
+        "image": "/static/images/rooms/other-room.svg",
+    },
 }
 
 # 티어별 허용 룸
@@ -214,6 +277,47 @@ def display_page(request: Request, room: str, date: str):
         "display.html",
         dict(request=request, room=room, room_name=ROOM_LABEL[room], date=date, hours=HOURS, items=items),
     )
+
+
+@app.get("/rooms", response_class=HTMLResponse)
+def rooms_overview(request: Request):
+    """Show quick overview for all rooms with jump links to each detail page."""
+    cards = []
+    for code, name in ROOM_LABEL.items():
+        details = ROOM_DETAILS.get(code)
+        if not details:
+            continue
+        cards.append(
+            dict(
+                code=code,
+                name=name,
+                summary=details["summary"],
+                capacity=details["capacity"],
+                features=details["features"],
+                image=details["image"],
+            )
+        )
+    cards.sort(key=lambda x: x["name"])
+    return templates.TemplateResponse("rooms.html", dict(request=request, rooms=cards))
+
+
+@app.get("/rooms/{room_code}", response_class=HTMLResponse)
+def room_detail(request: Request, room_code: str):
+    if room_code not in ROOM_DETAILS:
+        raise HTTPException(status_code=404, detail="Room not found")
+    details = ROOM_DETAILS[room_code]
+    schedule_date = request.query_params.get("date") or EVENT_DATES[0]
+    return templates.TemplateResponse(
+        "room_detail.html",
+        dict(
+            request=request,
+            room_code=room_code,
+            room_name=ROOM_LABEL.get(room_code, room_code),
+            details=details,
+            schedule_date=schedule_date,
+        ),
+    )
+
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page(request: Request, date: str | None = None, room: str | None = None):

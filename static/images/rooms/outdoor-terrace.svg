@@ -1,0 +1,41 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7fd1ff" />
+      <stop offset="100%" stop-color="#1e3f66" />
+    </linearGradient>
+    <linearGradient id="sunset" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffedbc" />
+      <stop offset="100%" stop-color="#ed4264" />
+    </linearGradient>
+    <linearGradient id="deck" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3a2d20" />
+      <stop offset="100%" stop-color="#6b4f2d" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)" rx="32" />
+  <circle cx="920" cy="160" r="120" fill="url(#sunset)" opacity="0.9" />
+  <g opacity="0.5">
+    <path d="M0 360 C200 320 400 360 600 340 C800 320 1000 360 1200 330 L1200 0 L0 0 Z" fill="#f6f9ff" />
+  </g>
+  <rect x="100" y="420" width="1000" height="260" rx="28" fill="#13233a" opacity="0.88" />
+  <rect x="140" y="520" width="320" height="120" rx="24" fill="url(#deck)" />
+  <rect x="560" y="500" width="220" height="160" rx="24" fill="#1b2f48" opacity="0.9" />
+  <rect x="820" y="500" width="220" height="160" rx="24" fill="#243f63" opacity="0.9" />
+  <g opacity="0.85">
+    <line x1="160" y1="520" x2="420" y2="520" stroke="#f7f1e3" stroke-width="6" stroke-linecap="round" />
+    <line x1="160" y1="560" x2="420" y2="560" stroke="#f7f1e3" stroke-width="6" stroke-linecap="round" />
+    <line x1="160" y1="600" x2="420" y2="600" stroke="#f7f1e3" stroke-width="6" stroke-linecap="round" />
+  </g>
+  <g opacity="0.25" fill="#ffffff">
+    <circle cx="240" cy="320" r="36" />
+    <circle cx="320" cy="280" r="24" />
+    <circle cx="380" cy="320" r="18" />
+  </g>
+  <text x="600" y="700" text-anchor="middle" font-size="56" font-family="'Segoe UI',sans-serif" fill="#f6f9ff" opacity="0.92">
+    Outdoor Skyline Terrace
+  </text>
+  <text x="600" y="744" text-anchor="middle" font-size="26" font-family="'Segoe UI',sans-serif" fill="#d6e6ff" opacity="0.85">
+    Sunset-ready venue with canopy lighting and premium lounge seating
+  </text>
+</svg>
