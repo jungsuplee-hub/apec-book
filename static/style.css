@@ -52,7 +52,9 @@ a:hover{text-decoration:underline}
   font-weight:800;
   font-size:var(--fs-lg);
 }
-.nav .link{margin-left:12px;color:#c9d7f2}
+.nav{display:flex;align-items:center}
+.nav .link{margin-left:12px;color:#c9d7f2;display:inline-flex;align-items:center;gap:8px}
+.nav .nav-icon{width:10px;height:10px;border-radius:50%;background:#ffd166;display:inline-block}
 
 .wrap{max-width:1200px;margin:16px auto;padding:0 12px}
 .card{
