@@ -32,10 +32,14 @@
       <span class="brand-caption">MEETING ROOM RESERVATION</span>
     </div>
     <nav class="nav">
-      <a href="/" class="link">Room Guide</a>
-      <a href="/booking" class="link">Booking</a>
-      <a href="/launcher" class="button">Display</a>
-      <a href="/admin" class="button">Admin</a>
+      <a href="/" class="link">
+        <span class="nav-icon" aria-hidden="true"></span>
+        Room Guide
+      </a>
+      <a href="/booking" class="link">
+        <span class="nav-icon" aria-hidden="true"></span>
+        Booking
+      </a>
     </nav>
   </div>
 </header>
@@ -83,7 +87,6 @@
     </div>
     <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px">
       <a class="button" href="/booking">Book this room</a>
-      <a class="button" href="/display?room={{ room_code }}&date={{ schedule_date }}">View live schedule</a>
     </div>
   </section>
 </main>
