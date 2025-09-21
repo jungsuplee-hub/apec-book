@@ -50,11 +50,7 @@ INSERT IGNORE INTO rooms(code,label,tier) VALUES
 ('GM1','GM1 · Meeting Room 1','Gold'),
 ('GM2','GM2 · Meeting Room 2','Gold'),
 ('GM3','GM3 · Meeting Room 3','Gold'),
-('GM4','GM4 · Outdoor F&B Zone, Office Bus','Gold'),
-('NM1','NM1 · Outdoor F&B Zone, Office Bus','General'),
-('NM2','NM2 · Outdoor F&B Zone, Office Bus','General'),
-('NM3','NM3 · Outdoor F&B Zone, Office Bus','General'),
-('NM4','NM4 · Outdoor F&B Zone, Office Bus','General');
+('NM1','NM1 · MAIN ENTERANCE','General');
 
 -- seed companies (idempotent)
 INSERT IGNORE INTO companies(name, tier) VALUES

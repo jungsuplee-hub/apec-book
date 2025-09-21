@@ -80,7 +80,6 @@
     .room-meta div{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:#d5e3ff}
     .room-meta dt{opacity:0.65}
     .room-meta dd{margin:0;font-weight:700}
-    .room-summary{margin:0;color:var(--muted);font-size:var(--fs-sm)}
     .room-features{display:flex;flex-wrap:wrap;gap:8px}
     .chip-small{border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:6px 12px;font-size:var(--fs-xs,13px);color:#e9f1ff;background:rgba(255,255,255,0.06)}
     .room-card-footer{margin-top:auto;display:flex;justify-content:flex-end}
@@ -96,15 +95,10 @@
   <div class="topbar-inner">
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
-      <div class="title">
-        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
-        <span class="headline">Meeting Rooms</span>
-      </div>
+      <span class="brand-caption">MEETING ROOM RESERVATION</span>
     </div>
     <nav class="nav">
-      <a href="/" class="link">Booking</a>
-      <a href="/launcher" class="link">Display</a>
-      <a href="/admin" class="link">Admin</a>
+      <a href="/booking" class="button">Booking</a>
     </nav>
   </div>
 </header>
@@ -136,7 +130,6 @@
             <div><dt>Capacity</dt><dd>{{ room.capacity }} pax</dd></div>
             <div><dt>Meeting Room Code</dt><dd>{{ room.meeting_code }}</dd></div>
           </dl>
-          <p class="room-summary">{{ room.summary }}</p>
           <div class="room-features">
             {% for feature in room.features %}
             <span class="chip-small">{{ feature }}</span>

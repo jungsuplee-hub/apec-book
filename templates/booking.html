@@ -9,12 +9,22 @@
   <style>
     .date-field{position:relative}
     .date-open-btn{
-      position:absolute; left:10px; top:50%; transform:translateY(-50%);
-      height:28px; padding:0 8px; border-radius:8px;
-      border:1px solid var(--line); background:transparent; color:var(--muted);
-      cursor:pointer; line-height:26px;
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      width:38px;
+      height:38px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:#0f1828;
+      color:var(--muted);
+      cursor:pointer;
     }
-    .date-field input[type="date"]{ padding-left:48px }
+    .date-field input[type="date"]{ padding-left:62px }
     .hidden{display:none}
     .locked { pointer-events:none; background:#222; color:#aaa; }
   </style>
@@ -24,15 +34,10 @@
   <div class="topbar-inner">
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
-      <div class="title">
-        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
-        <span class="headline">Meeting Rooms</span>
-      </div>
+      <span class="brand-caption">MEETING ROOM RESERVATION</span>
     </div>
     <nav class="nav">
-      <a href="/launcher" class="link">Display</a>
-      <a href="/rooms" class="link">Room Guide</a>
-      <a href="/admin" class="link">Admin</a>
+      <a href="/rooms" class="button">Room Guide</a>
     </nav>
   </div>
 </header>

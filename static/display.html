@@ -28,8 +28,8 @@ const room=params.get('room')||'DM1';
 const label={
   'DM1':'DM1 · Meeting Room 1','DM2':'DM2 · Meeting Room 2','DM3':'DM3 · Meeting Room 3','DM4':'DM4 · Outdoor F&B Zone, Office Bus',
   'PM1':'PM1 · Meeting Room 1','PM2':'PM2 · Meeting Room 2','PM3':'PM3 · Meeting Room 3','PM4':'PM4 · Outdoor F&B Zone, Office Bus',
-  'GM1':'GM1 · Meeting Room 1','GM2':'GM2 · Meeting Room 2','GM3':'GM3 · Meeting Room 3','GM4':'GM4 · Outdoor F&B Zone, Office Bus',
-  'NM1':'NM1 · Outdoor F&B Zone, Office Bus','NM2':'NM2 · Outdoor F&B Zone, Office Bus','NM3':'NM3 · Outdoor F&B Zone, Office Bus','NM4':'NM4 · Outdoor F&B Zone, Office Bus'
+  'GM1':'GM1 · Meeting Room 1','GM2':'GM2 · Meeting Room 2','GM3':'GM3 · Meeting Room 3',
+  'NM1':'NM1 · MAIN ENTERANCE'
 };
 const HOURS=Array.from({length:17},(_,i)=>i+6);
 function fmt(h){return String(h).padStart(2,'0')+':00'}
