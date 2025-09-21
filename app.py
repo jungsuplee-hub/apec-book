@@ -381,7 +381,13 @@ def booking_page(request: Request):
 def launcher_page(request: Request):
     return templates.TemplateResponse(
         "launcher.html",
-        dict(request=request, event_dates=EVENT_DATES, rooms_by_tier=ROOMS_BY_TIER, room_label=ROOM_LABEL),
+        dict(
+            request=request,
+            event_dates=EVENT_DATES,
+            rooms_by_tier=ROOMS_BY_TIER,
+            room_label=ROOM_LABEL,
+            tier_order=TIER_ORDER,
+        ),
     )
 
 @app.get("/display", response_class=HTMLResponse)
