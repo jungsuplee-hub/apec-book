@@ -153,22 +153,42 @@ SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://99.79.51.11")
 
 def build_body(recipient, items):
     lines = []
-    lines.append("Hello,\n")
-    lines.append(f"This is a reminder for your APEC meeting-room booking(s) on {TARGET_DATE}.\n")
-    lines.append("Details:\n")
-    for it in items:
-        room = it['room']
-        date = it['date']
+    company_name = items[0]["company"] if items else ""
+
+    lines.append(f"Dear {company_name},")
+    lines.append("")
+    lines.append("Warm greetings from the Secretariat of the APEC CEO Summit Korea 2025.")
+    lines.append("We are pleased to inform you that your meeting room reservation has been successfully received.")
+    lines.append("Please find the details of your booking below for your confirmation.")
+    lines.append("")
+    lines.append("Reservation Details:")
+
+    for idx, it in enumerate(items):
+        room = it["room"]
+        date = it["date"]
         link = f"{SERVER_BASE_URL}/display?room={room}&date={date}"
-        lines.append(f"  - {date} | {room} | {fmt_time(it['sh'])}–{fmt_time(it['eh'])} | {it['company']} ({it['tier']})")
-        lines.append(f"    View schedule: {link}")
-    lines.append("\nIf you need to change your reservation, please contact the Secretariat.\n")
-    lines.append("Thank you.\n")
+        if idx > 0:
+            lines.append("")
+        lines.append(f"- {it['company']}")
+        lines.append(f"- {date}")
+        lines.append(f"- {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
+        lines.append(f"- {it['tier']} / {room}")
+        lines.append(f"- Check Schedule : {link}")
+
+    lines.append("")
+    lines.append("We kindly ask you to review the above information and ensure that all details are correct.")
+    lines.append("Should you require any assistance or additional arrangements, please do not hesitate to contact us.")
+    lines.append("")
+    lines.append("We look forward to supporting your successful participation at the APEC CEO Summit Korea 2025.")
+    lines.append("")
+    lines.append("Warm regards,")
+    lines.append("APEC CEO Summit Korea 2025 Secretariat")
+
     return "\n".join(lines)
 
 
 def send_one(to_addr, items):
-    subject = f"APEC Meeting Room Booking – {TARGET_DATE}"
+    subject = "[APEC CEO Summit Korea 2025] Meeting Room Reservation Confirmation"
     body = build_body(to_addr, items)
 
     msg = EmailMessage()
