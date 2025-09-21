@@ -29,16 +29,11 @@
   <div class="topbar-inner">
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
-      <div class="title">
-        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
-        <span class="headline">Meeting Rooms</span>
-      </div>
+      <span class="brand-caption">MEETING ROOM RESERVATION</span>
     </div>
     <nav class="nav">
-      <a href="/" class="link">Booking</a>
-      <a href="/launcher" class="link">Display</a>
       <a href="/rooms" class="link">Room Guide</a>
-      <a href="/admin" class="link">Admin</a>
+      <a href="/booking" class="button">Booking</a>
     </nav>
   </div>
 </header>
@@ -55,7 +50,6 @@
       <div class="hero-details">
         <div class="badge-tier">{{ tier_label }}</div>
         <h1 class="title" style="margin:0">{{ room_name }}</h1>
-        <p class="muted" style="margin:0">{{ details.summary }}</p>
         <dl class="hero-meta">
           <div><dt>Location</dt><dd>{{ details.location }}</dd></div>
           <div><dt>Capacity</dt><dd>{{ details.capacity }} pax</dd></div>
@@ -86,7 +80,7 @@
       </div>
     </div>
     <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px">
-      <a class="button" href="/">Book this room</a>
+      <a class="button" href="/booking">Book this room</a>
       <a class="button" href="/display?room={{ room_code }}&date={{ schedule_date }}">View live schedule</a>
     </div>
   </section>
