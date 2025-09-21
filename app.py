@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from urllib.parse import quote_plus
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 
 from dotenv import load_dotenv
 import MySQLdb
+from MySQLdb import IntegrityError
 from MySQLdb.cursors import DictCursor
 
 load_dotenv()
@@ -39,6 +40,8 @@ ROOM_TIER_LABELS = {
 
 TIER_ORDER = list(ROOM_TIER_LABELS)
 TIER_INDEX = {tier: idx for idx, tier in enumerate(TIER_ORDER)}
+
+COMPANY_MANAGED_TIERS = [tier for tier in TIER_ORDER if tier != "General"]
 
 OTHER_ROOM_CODE = "NM1"
 
@@ -330,6 +333,44 @@ def fetch_companies(tier=None):
     finally:
         conn.close()
 
+
+def insert_company(name: str, tier: str) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO companies (name, tier) VALUES (%s, %s)",
+            (name, tier),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def remove_company(company_id: int) -> Tuple[bool, str]:
+    """Delete a company if it has no bookings. Returns (ok, message)."""
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM companies WHERE id=%s", (company_id,))
+        row = cur.fetchone()
+        if not row:
+            return False, "Company not found"
+
+        company_name = row[0]
+        cur.execute("SELECT COUNT(*) FROM bookings WHERE company=%s", (company_name,))
+        count = int(cur.fetchone()[0] or 0)
+        if count:
+            conn.rollback()
+            return False, f"Cannot delete '{company_name}': {count} booking(s) exist."
+
+        cur.execute("DELETE FROM companies WHERE id=%s", (company_id,))
+        conn.commit()
+        return True, f"Deleted '{company_name}'"
+    finally:
+        conn.close()
+
 def get_company_tier(name):
     conn = get_db()
     try:
@@ -460,14 +501,37 @@ def room_detail(request: Request, room_code: str):
 
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin_page(request: Request, date: str | None = None, room: str | None = None):
+def admin_page(
+    request: Request,
+    date: str | None = None,
+    room: str | None = None,
+    company_msg: str | None = None,
+    company_error: str | None = None,
+):
     date_val = date or EVENT_DATES[0]
     all_items = fetch_bookings(date_val)
     if room:
         all_items = [x for x in all_items if x["room_code"] == room]
+
+    companies = fetch_companies()
+    company_groups: Dict[str, List[Dict[str, Any]]] = {tier: [] for tier in COMPANY_MANAGED_TIERS}
+    for item in companies:
+        tier = item["tier"]
+        company_groups.setdefault(tier, []).append(item)
     return templates.TemplateResponse(
         "admin.html",
-        dict(request=request, date=date_val, room=room, items=all_items, event_dates=EVENT_DATES, room_label=ROOM_LABEL),
+        dict(
+            request=request,
+            date=date_val,
+            room=room,
+            items=all_items,
+            event_dates=EVENT_DATES,
+            room_label=ROOM_LABEL,
+            company_groups=company_groups,
+            company_tiers=COMPANY_MANAGED_TIERS,
+            company_msg=company_msg,
+            company_error=company_error,
+        ),
     )
 
 # ------------------------ actions / APIs ------------------------
@@ -584,6 +648,39 @@ def admin_delete(booking_id: int = Form(...), date: str | None = Form(None), roo
     if date: q.append(f"date={quote_plus(date)}")
     if room: q.append(f"room={quote_plus(room)}")
     qs = ("?" + "&".join(q)) if q else ""
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
+
+@app.post("/admin/companies/add")
+def admin_company_add(tier: str = Form(...), name: str = Form(...)):
+    tier = (tier or "").strip()
+    name = (name or "").strip()
+
+    params: List[tuple[str, str]] = []
+
+    if tier not in COMPANY_MANAGED_TIERS:
+        params.append(("company_error", "Invalid tier selected"))
+    elif not name:
+        params.append(("company_error", "Company name is required"))
+    else:
+        try:
+            insert_company(name, tier)
+        except IntegrityError:
+            params.append(("company_error", f"'{name}' already exists"))
+        else:
+            params.append(("company_msg", f"Added '{name}' to {tier}"))
+
+    qs = ""
+    if params:
+        qs = "?" + "&".join(f"{key}={quote_plus(value)}" for key, value in params)
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
+
+@app.post("/admin/companies/delete")
+def admin_company_delete(company_id: int = Form(...)):
+    ok, message = remove_company(company_id)
+    key = "company_msg" if ok else "company_error"
+    qs = f"?{key}={quote_plus(message)}" if message else ""
     return RedirectResponse(url=f"/admin{qs}", status_code=303)
 
 
