@@ -33,7 +33,22 @@ a:hover{text-decoration:underline}
 .topbar{position:sticky;top:0;z-index:20;background:#0c1422;box-shadow:var(--shadow)}
 .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
 .brand{display:flex;align-items:center;gap:10px}
-.brand .title{font-weight:700;font-size:var(--fs-lg)}
+.brand .title{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  line-height:1.15;
+}
+.brand .title .eyebrow{
+  font-size:var(--fs-sm);
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.brand .title .headline{
+  font-weight:800;
+  font-size:var(--fs-lg);
+}
 .nav .link{margin-left:12px;color:#c9d7f2}
 
 .wrap{max-width:1200px;margin:16px auto;padding:0 12px}
