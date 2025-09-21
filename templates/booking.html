@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="icon" type="image/x-icon" href="https://www.apecceosummitkorea2025.com/images/favicon.ico" />
   <style>
-    .date-field{position:relative}
-    .date-open-btn{
+    #dateField .date-field{position:relative}
+    #dateField .date-open-btn{
       position:absolute;
       left:14px;
       top:50%;
@@ -24,7 +24,7 @@
       color:var(--muted);
       cursor:pointer;
     }
-    .date-field input[type="date"]{ padding-left:62px }
+    #dateField input[type="date"]{ padding-left:62px }
     .hidden{display:none}
     .locked { pointer-events:none; background:#222; color:#aaa; }
   </style>
@@ -64,10 +64,12 @@
         <input required type="email" name="email" id="email" placeholder="name@example.com" />
       </label>
 
-      <label class="field date-field" id="dateField">
+      <label class="field" id="dateField">
         <span>Date</span>
-        <input required type="date" name="date" id="date" min="2025-10-29" max="2025-10-31" />
-        <button class="date-open-btn" type="button" id="openDate" aria-label="Open calendar">📅</button>
+        <div class="date-field">
+          <input required type="date" name="date" id="date" min="2025-10-29" max="2025-10-31" />
+          <button class="date-open-btn" type="button" id="openDate" aria-label="Open calendar">📅</button>
+        </div>
       </label>
 
       <label class="field">
