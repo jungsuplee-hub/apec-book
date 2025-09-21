@@ -447,6 +447,9 @@ def create_booking(
     blocks: int = Form(...),
     company_other: str | None = Form(None),  # Other일 때 수동 입력
 ):
+    company = (company or "").strip()
+    room = (room or "").strip()
+
     if date not in EVENT_DATES:
         raise HTTPException(status_code=400, detail="Invalid date")
     if room not in ROOM_LABEL:
