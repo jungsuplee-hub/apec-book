@@ -245,10 +245,39 @@ def fetch_bookings(date_str: str) -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
+def ensure_rooms_seeded(conn=None):
+    """Ensure the static room catalog exists in the database."""
+
+    owns_connection = conn is None
+    if owns_connection:
+        conn = get_db()
+
+    try:
+        cur = conn.cursor()
+        rows = [
+            (code, ROOM_LABEL[code], ROOM_DETAILS[code]["tier"])
+            for code in ROOM_LABEL
+        ]
+        cur.executemany(
+            """
+            INSERT INTO rooms (code, label, tier)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE label=VALUES(label), tier=VALUES(tier)
+            """,
+            rows,
+        )
+        if owns_connection:
+            conn.commit()
+    finally:
+        if owns_connection:
+            conn.close()
+
+
 def insert_booking(date_str, room_code, tier, company, email, start_hour, blocks):
     end_hour = start_hour + blocks
     conn = get_db()
     try:
+        ensure_rooms_seeded(conn)
         cur = conn.cursor()
         cur.execute(
             """
