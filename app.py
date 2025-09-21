@@ -443,3 +443,9 @@ def admin_delete(booking_id: int = Form(...), date: str | None = Form(None), roo
     qs = ("?" + "&".join(q)) if q else ""
     return RedirectResponse(url=f"/admin{qs}", status_code=303)
 
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host=APP_HOST, port=APP_PORT)
+
