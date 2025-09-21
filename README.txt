@@ -35,6 +35,8 @@ Restart=always
 RestartSec=3
 
 # (선택) 기본 하드닝
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
 PrivateTmp=true
 
