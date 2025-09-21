@@ -180,10 +180,10 @@ def build_body(recipient, items):
         link = f"{SERVER_BASE_URL}/display?room={room}&date={date}"
         if idx > 0:
             lines.append("")
-        lines.append(f"- {it['company']}")
-        lines.append(f"- {date}")
-        lines.append(f"- {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
-        lines.append(f"- {it['tier']} / {room}")
+        lines.append(f"- Company : {it['company']}")
+        lines.append(f"- Date : {date}")
+        lines.append(f"- Time : {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
+        lines.append(f"- Room : {it['tier']} / {room} - OUTDOOR F&B ZONE_OFFICE BUS")
         lines.append(f"- Check Schedule : {link}")
 
     lines.append("")
