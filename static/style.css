@@ -33,13 +33,15 @@ a:hover{text-decoration:underline}
 
 .topbar{position:sticky;top:0;z-index:20;background:#0c1422;box-shadow:var(--shadow)}
 .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
-.brand{display:flex;align-items:center;gap:10px}
-.brand .title{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  line-height:1.15;
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.brand img{height:48px;width:auto}
+.brand-caption{
+  font-weight:800;
+  font-size:var(--fs-lg);
+  letter-spacing:0.14em;
+  text-transform:uppercase;
 }
+.brand .title{display:flex;flex-direction:column;gap:2px;line-height:1.15}
 .brand .title .eyebrow{
   font-size:var(--fs-sm);
   letter-spacing:0.18em;
@@ -113,7 +115,7 @@ input:focus,select:focus{border-color:#4a68ff;box-shadow:0 0 0 3px rgba(68,85,25
   .board table{font-size:16px}
   .table th,.table td{padding:10px 8px}
   .pill{padding:4px 8px}
-  .date-open-btn{height:32px}
+  .date-open-btn{width:34px;height:34px}
   .wrap{padding:0 10px}
 }
 
