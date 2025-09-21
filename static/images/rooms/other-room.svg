@@ -1,0 +1,25 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#221f3b" />
+      <stop offset="100%" stop-color="#302d52" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4facfe" />
+      <stop offset="100%" stop-color="#00f2fe" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" rx="32" fill="url(#bg)" />
+  <rect x="200" y="200" width="800" height="400" rx="36" fill="#0e1529" opacity="0.9" />
+  <rect x="260" y="260" width="320" height="120" rx="28" fill="#16223b" />
+  <rect x="260" y="420" width="320" height="120" rx="28" fill="#16223b" opacity="0.8" />
+  <rect x="620" y="260" width="280" height="280" rx="32" fill="#141f34" />
+  <rect x="660" y="300" width="200" height="200" rx="28" fill="url(#accent)" opacity="0.28" />
+  <rect x="700" y="340" width="120" height="120" rx="18" fill="url(#accent)" opacity="0.55" />
+  <text x="600" y="660" text-anchor="middle" font-size="54" font-family="'Segoe UI',sans-serif" fill="#f6f9ff" opacity="0.92">
+    Multi-purpose Collaboration Room
+  </text>
+  <text x="600" y="705" text-anchor="middle" font-size="26" font-family="'Segoe UI',sans-serif" fill="#c5d8ff" opacity="0.85">
+    A flexible canvas ready for bespoke experiences and private meetings
+  </text>
+</svg>

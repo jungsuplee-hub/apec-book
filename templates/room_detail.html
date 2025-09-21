@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ room_name }} - Room Details</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" type="image/x-icon" href="https://www.apecceosummitkorea2025.com/images/favicon.ico" />
+  <style>
+    .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:center}
+    .hero img{width:100%;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow)}
+    .feature-list{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
+    .feature-list li{border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:#101a2c}
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
+    .info-card{background:#101a2c;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img src="/static/logo-apec.svg" alt="APEC" />
+      <div class="title">
+        <span class="eyebrow">APEC CEO Summit</span>
+        <span class="headline">Meeting Rooms</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="link">Booking</a>
+      <a href="/launcher" class="link">Display</a>
+      <a href="/rooms" class="link">Room Guide</a>
+      <a href="/admin" class="link">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <a href="/rooms" class="muted" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:12px">← Back to rooms</a>
+    <div class="hero">
+      <img src="{{ details.image }}" alt="{{ room_name }}" loading="lazy" />
+      <div>
+        <h1 class="title" style="margin-bottom:12px">{{ room_name }}</h1>
+        <p class="muted" style="margin:0 0 16px">{{ details.summary }}</p>
+        <ul class="feature-list">
+          {% for feature in details.features %}
+          <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+        <div style="margin-top:16px">
+          <span class="pill">Capacity: {{ details.capacity }} pax</span>
+          <span class="pill" style="margin-left:10px">Code: {{ room_code }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="title">Plan your meeting</h2>
+    <div class="info-grid">
+      <div class="info-card">
+        <h3 style="margin-top:0">Best for</h3>
+        <p class="muted">High-touch engagements, leadership sessions and partner briefings.</p>
+      </div>
+      <div class="info-card">
+        <h3 style="margin-top:0">Setup options</h3>
+        <p class="muted">Boardroom, classroom or lounge layout. Concierge team can reset the room within 15 minutes.</p>
+      </div>
+      <div class="info-card">
+        <h3 style="margin-top:0">Connectivity</h3>
+        <p class="muted">High-bandwidth Wi-Fi, HDMI/USB-C presentation hub and dedicated AV technician support.</p>
+      </div>
+    </div>
+    <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px">
+      <a class="button" href="/">Book this room</a>
+      <a class="button" href="/display?room={{ room_code }}&date={{ schedule_date }}">View live schedule</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>
