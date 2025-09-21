@@ -25,7 +25,7 @@
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
       <div class="title">
-        <span class="eyebrow">APEC CEO Summit</span>
+        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
         <span class="headline">Meeting Rooms</span>
       </div>
     </div>
@@ -124,6 +124,7 @@
   const HOURS         = {{ hours|tojson|safe }};
   const MAX_BLOCKS    = {{ max_blocks|tojson|safe }};
   const INITIAL_DATE  = {{ initial_date|tojson|safe }};
+  const OTHER_ROOM    = {{ OTHER_ROOM_CODE|tojson|safe }};
 
   const $ = (s, r=document) => r.querySelector(s);
   const fmt = h => String(h).padStart(2,'0') + ':00';
@@ -167,9 +168,9 @@
 
   function enterOtherMode(){
     $('#companyOtherField').classList.remove('hidden');
-    $('#tierView').value = 'Other';
-    $('#tier').value = 'Other';
-    $('#room').innerHTML = `<option value="Other-Room">${ROOM_LABEL['Other-Room']}</option>`;
+    $('#tierView').value = 'General';
+    $('#tier').value = 'General';
+    $('#room').innerHTML = `<option value="${OTHER_ROOM}">${ROOM_LABEL[OTHER_ROOM]||OTHER_ROOM}</option>`;
     $('#room').classList.add('locked');
   }
   function exitOtherMode(){

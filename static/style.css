@@ -17,6 +17,7 @@
   --fs-lg:clamp(16px,1.6vw,18px);
   --fs-md:clamp(14px,1.4vw,16px);
   --fs-sm:clamp(13px,1.3vw,15px);
+  --fs-xs:clamp(12px,1.1vw,13px);
 }
 
 *{box-sizing:border-box}

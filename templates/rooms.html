@@ -7,15 +7,88 @@
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="icon" type="image/x-icon" href="https://www.apecceosummitkorea2025.com/images/favicon.ico" />
   <style>
-    .room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-top:20px}
-    .room-card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-    .room-card img{width:100%;height:180px;object-fit:cover;background:#091120}
-    .room-card-body{padding:16px;display:flex;flex-direction:column;gap:12px}
-    .room-card h3{margin:0;font-size:var(--fs-lg)}
-    .room-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--muted)}
+    .room-guide .guide-notes{
+      margin:12px 0 0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:6px;
+    }
+    .room-guide .guide-notes li{
+      background:rgba(68,85,255,0.08);
+      border:1px solid rgba(68,85,255,0.25);
+      border-radius:12px;
+      padding:10px 14px;
+      color:#d5e3ff;
+      font-size:var(--fs-sm);
+    }
+    .tier-group{margin-top:28px;display:flex;flex-direction:column;gap:16px}
+    .tier-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .badge-tier{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(9,17,32,0.7);
+      font-size:var(--fs-sm);
+      font-weight:700;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+    }
+    .tier-name{color:var(--muted);font-size:var(--fs-sm)}
+    .room-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+    .room-card{
+      border:1px solid var(--line);
+      border-radius:20px;
+      background:linear-gradient(160deg,rgba(16,28,48,0.95),rgba(10,17,32,0.95));
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .room-card-image{
+      position:relative;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.1);
+      background:#0b1424;
+      padding:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .room-card-image img{width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 12px 24px rgba(0,0,0,0.35));}
+    .room-category{
+      position:absolute;
+      bottom:12px;
+      left:12px;
+      background:rgba(9,17,32,0.85);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:10px;
+      padding:4px 10px;
+      font-size:var(--fs-xs,13px);
+      color:#dbe6ff;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+    .room-name{margin:0;font-size:var(--fs-lg);font-weight:800;text-transform:uppercase;letter-spacing:0.05em}
+    .room-meta{display:grid;gap:8px}
+    .room-meta div{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:#d5e3ff}
+    .room-meta dt{opacity:0.65}
+    .room-meta dd{margin:0;font-weight:700}
+    .room-summary{margin:0;color:var(--muted);font-size:var(--fs-sm)}
     .room-features{display:flex;flex-wrap:wrap;gap:8px}
-    .chip-small{border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:var(--fs-xs,13px);color:#c9d7f2}
+    .chip-small{border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:6px 12px;font-size:var(--fs-xs,13px);color:#e9f1ff;background:rgba(255,255,255,0.06)}
     .room-card-footer{margin-top:auto;display:flex;justify-content:flex-end}
+    .room-card .button{background:#ffd166;color:#0b1020;font-weight:700}
+    @media (max-width:768px){
+      .room-card{padding:16px}
+      .room-card-image img{width:88px;height:88px}
+    }
   </style>
 </head>
 <body>
@@ -24,7 +97,7 @@
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
       <div class="title">
-        <span class="eyebrow">APEC CEO Summit</span>
+        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
         <span class="headline">Meeting Rooms</span>
       </div>
     </div>
@@ -37,20 +110,33 @@
 </header>
 
 <main class="wrap">
-  <section class="card">
+  <section class="card room-guide">
     <h1 class="title">Room Guide</h1>
-    <p class="muted">Explore the meeting rooms curated for APEC CEO Summit delegations. Tap a room to see detailed amenities and images.</p>
-    <div class="room-grid">
-      {% for room in rooms %}
-      <article class="room-card">
-        <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
-        <div class="room-card-body">
-          <h3>{{ room.name }}</h3>
-          <div class="room-meta">
-            <span>Capacity: {{ room.capacity }} pax</span>
-            <span>Code: {{ room.code }}</span>
+    <ul class="guide-notes">
+      <li><strong>Meeting rooms</strong> are available for reservation up to two times per day, with each session limited to <strong>60 minutes</strong>.</li>
+      <li>Explore the meeting rooms curated for <strong>APEC CEO Summit Korea 2025</strong>. Tap the room to see detailed amenities.</li>
+    </ul>
+
+    {% for section in sections %}
+    <div class="tier-group">
+      <div class="tier-header">
+        <div class="badge-tier">{{ section.tier_label }}</div>
+        <span class="tier-name">{{ section.tier }}</span>
+      </div>
+      <div class="room-card-grid">
+        {% for room in section.rooms %}
+        <article class="room-card">
+          <div class="room-card-image">
+            <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
+            <span class="room-category">{{ room.category }}</span>
           </div>
-          <p class="muted" style="margin:0">{{ room.summary }}</p>
+          <h3 class="room-name">{{ room.name }}</h3>
+          <dl class="room-meta">
+            <div><dt>Location</dt><dd>{{ room.location }}</dd></div>
+            <div><dt>Capacity</dt><dd>{{ room.capacity }} pax</dd></div>
+            <div><dt>Meeting Room Code</dt><dd>{{ room.meeting_code }}</dd></div>
+          </dl>
+          <p class="room-summary">{{ room.summary }}</p>
           <div class="room-features">
             {% for feature in room.features %}
             <span class="chip-small">{{ feature }}</span>
@@ -59,10 +145,11 @@
           <div class="room-card-footer">
             <a class="button" href="/rooms/{{ room.code }}">View details</a>
           </div>
-        </div>
-      </article>
-      {% endfor %}
+        </article>
+        {% endfor %}
+      </div>
     </div>
+    {% endfor %}
   </section>
 </main>
 </body>
