@@ -7,10 +7,19 @@
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="icon" type="image/x-icon" href="https://www.apecceosummitkorea2025.com/images/favicon.ico" />
   <style>
-    .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;align-items:center}
-    .hero img{width:100%;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow)}
+    .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px;align-items:center}
+    .hero-visual{position:relative;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(160deg,rgba(16,28,48,0.95),rgba(12,20,36,0.95));padding:24px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+    .hero-visual img{width:160px;height:160px;object-fit:contain;filter:drop-shadow(0 16px 36px rgba(0,0,0,0.45));}
+    .hero-code{position:absolute;top:18px;right:18px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(9,17,32,0.85);font-weight:700;letter-spacing:0.08em}
+    .hero-category{position:absolute;bottom:18px;left:18px;padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(9,17,32,0.75);font-size:var(--fs-xs,13px);letter-spacing:0.08em;text-transform:uppercase;color:#dbe6ff}
+    .hero-details{display:flex;flex-direction:column;gap:14px}
+    .badge-tier{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(9,17,32,0.8);font-size:var(--fs-sm);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
+    .hero-meta{display:grid;gap:10px;margin:0}
+    .hero-meta div{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:#dbe6ff}
+    .hero-meta dt{opacity:0.65}
+    .hero-meta dd{margin:0;font-weight:700}
     .feature-list{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
-    .feature-list li{border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:#101a2c}
+    .feature-list li{border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:8px 16px;background:rgba(255,255,255,0.06)}
     .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:20px}
     .info-card{background:#101a2c;border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
   </style>
@@ -21,7 +30,7 @@
     <div class="brand">
       <img src="/static/logo-apec.svg" alt="APEC" />
       <div class="title">
-        <span class="eyebrow">APEC CEO Summit</span>
+        <span class="eyebrow">APEC CEO Summit Korea 2025</span>
         <span class="headline">Meeting Rooms</span>
       </div>
     </div>
@@ -38,19 +47,24 @@
   <section class="card">
     <a href="/rooms" class="muted" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:12px">← Back to rooms</a>
     <div class="hero">
-      <img src="{{ details.image }}" alt="{{ room_name }}" loading="lazy" />
-      <div>
-        <h1 class="title" style="margin-bottom:12px">{{ room_name }}</h1>
-        <p class="muted" style="margin:0 0 16px">{{ details.summary }}</p>
+      <div class="hero-visual">
+        <img src="{{ details.image }}" alt="{{ room_name }}" loading="lazy" />
+        <span class="hero-code">{{ details.meeting_code }}</span>
+        <span class="hero-category">{{ details.category }}</span>
+      </div>
+      <div class="hero-details">
+        <div class="badge-tier">{{ tier_label }}</div>
+        <h1 class="title" style="margin:0">{{ room_name }}</h1>
+        <p class="muted" style="margin:0">{{ details.summary }}</p>
+        <dl class="hero-meta">
+          <div><dt>Location</dt><dd>{{ details.location }}</dd></div>
+          <div><dt>Capacity</dt><dd>{{ details.capacity }} pax</dd></div>
+        </dl>
         <ul class="feature-list">
           {% for feature in details.features %}
           <li>{{ feature }}</li>
           {% endfor %}
         </ul>
-        <div style="margin-top:16px">
-          <span class="pill">Capacity: {{ details.capacity }} pax</span>
-          <span class="pill" style="margin-left:10px">Code: {{ room_code }}</span>
-        </div>
       </div>
     </div>
   </section>
@@ -60,15 +74,15 @@
     <div class="info-grid">
       <div class="info-card">
         <h3 style="margin-top:0">Best for</h3>
-        <p class="muted">High-touch engagements, leadership sessions and partner briefings.</p>
+        <p class="muted">Sponsor networking, leadership sessions and curated hospitality moments.</p>
       </div>
       <div class="info-card">
         <h3 style="margin-top:0">Setup options</h3>
-        <p class="muted">Boardroom, classroom or lounge layout. Concierge team can reset the room within 15 minutes.</p>
+        <p class="muted">Boardroom, lounge or standing table layouts. Concierge support can refresh the room within 15 minutes.</p>
       </div>
       <div class="info-card">
         <h3 style="margin-top:0">Connectivity</h3>
-        <p class="muted">High-bandwidth Wi-Fi, HDMI/USB-C presentation hub and dedicated AV technician support.</p>
+        <p class="muted">High-bandwidth Wi-Fi, HDMI/USB-C hub and dedicated AV technician support on standby.</p>
       </div>
     </div>
     <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px">

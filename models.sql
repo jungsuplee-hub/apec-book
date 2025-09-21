@@ -39,15 +39,22 @@ CREATE TABLE IF NOT EXISTS companies (
 
 -- seed default rooms (idempotent)
 INSERT IGNORE INTO rooms(code,label,tier) VALUES
-('Indoor-1','Indoor 1','Diamond'),
-('Indoor-2','Indoor 2','Diamond'),
-('Outdoor-1','Outdoor 1','Diamond'),
-('Indoor-3','Indoor 3','Platinum'),
-('Indoor-4','Indoor 4','Platinum'),
-('Outdoor-2','Outdoor 2','Platinum'),
-('Outdoor-3','Outdoor 3','Gold'),
-('Outdoor-Annex','Outdoor Annex','Gold'),
-('Indoor-5','Indoor 5','General');
+('DM1','DM1 · Meeting Room 1','Diamond'),
+('DM2','DM2 · Meeting Room 2','Diamond'),
+('DM3','DM3 · Meeting Room 3','Diamond'),
+('DM4','DM4 · Outdoor F&B Zone, Office Bus','Diamond'),
+('PM1','PM1 · Meeting Room 1','Platinum'),
+('PM2','PM2 · Meeting Room 2','Platinum'),
+('PM3','PM3 · Meeting Room 3','Platinum'),
+('PM4','PM4 · Outdoor F&B Zone, Office Bus','Platinum'),
+('GM1','GM1 · Meeting Room 1','Gold'),
+('GM2','GM2 · Meeting Room 2','Gold'),
+('GM3','GM3 · Meeting Room 3','Gold'),
+('GM4','GM4 · Outdoor F&B Zone, Office Bus','Gold'),
+('NM1','NM1 · Outdoor F&B Zone, Office Bus','General'),
+('NM2','NM2 · Outdoor F&B Zone, Office Bus','General'),
+('NM3','NM3 · Outdoor F&B Zone, Office Bus','General'),
+('NM4','NM4 · Outdoor F&B Zone, Office Bus','General');
 
 -- seed companies (idempotent)
 INSERT IGNORE INTO companies(name, tier) VALUES

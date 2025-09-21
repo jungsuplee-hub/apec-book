@@ -33,8 +33,18 @@
 </section>
 </main>
 <script>
-const ROOM_LABEL = { 'Indoor-1':'Indoor 1','Indoor-2':'Indoor 2','Outdoor-1':'Outdoor 1','Indoor-3':'Indoor 3','Indoor-4':'Indoor 4','Outdoor-2':'Outdoor 2','Outdoor-3':'Outdoor 3','Outdoor-Annex':'Outdoor Annex','Indoor-5':'Indoor 5'};
-const ROOM_MAP = { 'Diamond':['Indoor-1','Indoor-2','Outdoor-1'], 'Platinum':['Indoor-3','Indoor-4','Outdoor-2'], 'Gold':['Outdoor-3','Outdoor-Annex'], 'General':['Indoor-5'] };
+const ROOM_LABEL = {
+  'DM1':'DM1 · Meeting Room 1','DM2':'DM2 · Meeting Room 2','DM3':'DM3 · Meeting Room 3','DM4':'DM4 · Outdoor F&B Zone, Office Bus',
+  'PM1':'PM1 · Meeting Room 1','PM2':'PM2 · Meeting Room 2','PM3':'PM3 · Meeting Room 3','PM4':'PM4 · Outdoor F&B Zone, Office Bus',
+  'GM1':'GM1 · Meeting Room 1','GM2':'GM2 · Meeting Room 2','GM3':'GM3 · Meeting Room 3','GM4':'GM4 · Outdoor F&B Zone, Office Bus',
+  'NM1':'NM1 · Outdoor F&B Zone, Office Bus','NM2':'NM2 · Outdoor F&B Zone, Office Bus','NM3':'NM3 · Outdoor F&B Zone, Office Bus','NM4':'NM4 · Outdoor F&B Zone, Office Bus'
+};
+const ROOM_MAP = {
+  'Diamond':['DM1','DM2','DM3','DM4'],
+  'Platinum':['PM1','PM2','PM3','PM4'],
+  'Gold':['GM1','GM2','GM3','GM4'],
+  'General':['NM1','NM2','NM3','NM4']
+};
 const EVENT_START='2025-10-29', EVENT_END='2025-10-31';
 
 
