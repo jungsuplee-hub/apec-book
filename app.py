@@ -40,7 +40,7 @@ ROOM_TIER_LABELS = {
 TIER_ORDER = list(ROOM_TIER_LABELS)
 TIER_INDEX = {tier: idx for idx, tier in enumerate(TIER_ORDER)}
 
-OTHER_ROOM_CODE = "NM4"
+OTHER_ROOM_CODE = "NM1"
 
 ROOMS_DATA = [
     {
@@ -48,10 +48,10 @@ ROOMS_DATA = [
         "tier": "Diamond",
         "name": "Meeting Room 1",
         "category": "Indoor Meeting Suite",
-        "location": "F1",
-        "capacity": 6,
+        "location": "1F",
+        "capacity": 8,
         "meeting_code": "DM1",
-        "summary": "Premium indoor suite with plush seating for confidential briefings.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 1,
@@ -61,11 +61,11 @@ ROOMS_DATA = [
         "tier": "Diamond",
         "name": "Meeting Room 2",
         "category": "Indoor Meeting Suite",
-        "location": "F2",
-        "capacity": 6,
+        "location": "1F",
+        "capacity": 13,
         "meeting_code": "DM2",
-        "summary": "Presentation-ready suite equipped with podium and broadcast AV.",
-        "features": ["Chair and Table", "Podium"],
+        "summary": "",
+        "features": ["Chair and Table", "Podium", "Wired Mic."],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 2,
     },
@@ -74,10 +74,10 @@ ROOMS_DATA = [
         "tier": "Diamond",
         "name": "Meeting Room 3",
         "category": "Indoor Meeting Suite",
-        "location": "F3",
-        "capacity": 8,
+        "location": "1F",
+        "capacity": 6,
         "meeting_code": "DM3",
-        "summary": "Spacious lounge-style room ideal for leadership exchanges.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 3,
@@ -88,9 +88,9 @@ ROOMS_DATA = [
         "name": "Outdoor F&B Zone, Office Bus",
         "category": "Outdoor F&B Zone, Office Bus",
         "location": "F&B Zone",
-        "capacity": 8,
+        "capacity": 7,
         "meeting_code": "DM4",
-        "summary": "Private office bus stationed outdoors for relaxed networking.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/outdoor-terrace.svg",
         "order": 4,
@@ -100,10 +100,10 @@ ROOMS_DATA = [
         "tier": "Platinum",
         "name": "Meeting Room 1",
         "category": "Indoor Meeting Suite",
-        "location": "B1",
-        "capacity": 6,
+        "location": "1F",
+        "capacity": 8,
         "meeting_code": "PM1",
-        "summary": "Comfortable suite tailored for sponsor meetups and briefings.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 1,
@@ -114,9 +114,9 @@ ROOMS_DATA = [
         "name": "Meeting Room 2",
         "category": "Indoor Meeting Suite",
         "location": "B1",
-        "capacity": 6,
+        "capacity": 8,
         "meeting_code": "PM2",
-        "summary": "Collaborative setup with adaptable seating and podium access.",
+        "summary": "",
         "features": ["Chair and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 2,
@@ -126,10 +126,10 @@ ROOMS_DATA = [
         "tier": "Platinum",
         "name": "Meeting Room 3",
         "category": "Indoor Meeting Suite",
-        "location": "B2",
+        "location": "B1",
         "capacity": 6,
         "meeting_code": "PM3",
-        "summary": "Flexible room with modern lounge seating for partner discussions.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 3,
@@ -140,9 +140,9 @@ ROOMS_DATA = [
         "name": "Outdoor F&B Zone, Office Bus",
         "category": "Outdoor F&B Zone, Office Bus",
         "location": "F&B Zone",
-        "capacity": 8,
+        "capacity": 7,
         "meeting_code": "PM4",
-        "summary": "Outdoor office bus with climate control for casual meetups.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/outdoor-terrace.svg",
         "order": 4,
@@ -155,7 +155,7 @@ ROOMS_DATA = [
         "location": "B1",
         "capacity": 6,
         "meeting_code": "GM1",
-        "summary": "Compact indoor room supporting sponsor check-ins and huddles.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 1,
@@ -168,7 +168,7 @@ ROOMS_DATA = [
         "location": "B2",
         "capacity": 6,
         "meeting_code": "GM2",
-        "summary": "Boardroom layout that keeps planning conversations focused.",
+        "summary": "",
         "features": ["Chair and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 2,
@@ -178,78 +178,26 @@ ROOMS_DATA = [
         "tier": "Gold",
         "name": "Meeting Room 3",
         "category": "Indoor Meeting Suite",
-        "location": "B3",
+        "location": "F&B ZONE",
         "capacity": 6,
         "meeting_code": "GM3",
-        "summary": "Relaxed lounge arrangement for receptions and interviews.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/indoor-suite.svg",
         "order": 3,
     },
     {
-        "code": "GM4",
-        "tier": "Gold",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
-        "capacity": 8,
-        "meeting_code": "GM4",
-        "summary": "Outdoor office bus ready for sponsor activations and pop-ups.",
-        "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
-        "order": 4,
-    },
-    {
         "code": "NM1",
         "tier": "General",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
-        "capacity": 8,
+        "name": "MAIN ENTERANCE",
+        "category": "MAIN ENTERANCE",
+        "location": "MAIN ENTERANCE",
+        "capacity": 7,
         "meeting_code": "NM1",
-        "summary": "General delegate office bus with comfortable seating.",
+        "summary": "",
         "features": ["Sofa and Table"],
         "image": "/static/images/rooms/outdoor-terrace.svg",
         "order": 1,
-    },
-    {
-        "code": "NM2",
-        "tier": "General",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "Main Entrance",
-        "capacity": 7,
-        "meeting_code": "NM2",
-        "summary": "Open-air office bus near the entrance for quick huddles.",
-        "features": ["High-top Tables"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
-        "order": 2,
-    },
-    {
-        "code": "NM3",
-        "tier": "General",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
-        "capacity": 6,
-        "meeting_code": "NM3",
-        "summary": "Compact office bus with standing tables for brief syncs.",
-        "features": ["Standing Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
-        "order": 3,
-    },
-    {
-        "code": "NM4",
-        "tier": "General",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
-        "capacity": 6,
-        "meeting_code": "NM4",
-        "summary": "Reserved support office bus for ad-hoc delegate meetings.",
-        "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
-        "order": 4,
     },
 ]
 
@@ -382,7 +330,7 @@ def get_company_daily_total(date_str: str, company_name: str) -> int:
         conn.close()
 
 # --------------------------- pages ------------------------------
-@app.get("/", response_class=HTMLResponse)
+@app.get("/booking", response_class=HTMLResponse)
 def booking_page(request: Request):
     today = datetime.utcnow().date().isoformat()
     initial_date = EVENT_DATES[0] if (today < EVENT_DATES[0] or today > EVENT_DATES[-1]) else today
@@ -432,6 +380,7 @@ def display_page(request: Request, room: str, date: str):
     )
 
 
+@app.get("/", response_class=HTMLResponse)
 @app.get("/rooms", response_class=HTMLResponse)
 def rooms_overview(request: Request):
     """Grouped overview of rooms by sponsor tier."""
@@ -551,7 +500,7 @@ def create_booking(
     if company == "Other":
         params["company_other"] = company_to_save
     qs = "&".join(f"{k}={quote_plus(v)}" for k, v in params.items())
-    return RedirectResponse(url=f"/?{qs}", status_code=303)
+    return RedirectResponse(url=f"/booking?{qs}", status_code=303)
 
 @app.get("/api/availability")
 def availability(date: str, room: str):
