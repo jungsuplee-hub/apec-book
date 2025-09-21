@@ -61,7 +61,7 @@
 
       <label class="field">
         <span>Date</span>
-        <input required type="date" name="date" id="date" min="2025-10-28" max="2025-10-30" />
+        <input required type="date" name="date" id="date" min="2025-10-29" max="2025-10-31" />
       </label>
 
       <label class="field">
@@ -83,7 +83,7 @@
       </label>
 
       <div class="hint">
-        Operating hours <b>06:00–22:00</b> · Event <b>Oct 28–30</b> · Max consecutive blocks: <b>2</b>
+        Operating hours <b>06:00–22:00</b> · Event <b>Oct 29–31</b> · Max consecutive blocks: <b>2</b>
       </div>
 
       <button class="button primary" type="submit">Submit booking</button>

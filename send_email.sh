@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Usage:
-#   ./send_email.sh 20251028            # 실제 발송 (DRY_RUN=0일 때)
-#   DRY_RUN=1 ./send_email.sh 20251028  # 메일 미발송, 콘솔 미리보기
+#   ./send_email.sh 20251029            # 실제 발송 (DRY_RUN=0일 때)
+#   DRY_RUN=1 ./send_email.sh 20251029  # 메일 미발송, 콘솔 미리보기
 #
 # Requirements:
 #   - Python 3.x (email/smtplib 표준 라이브러리 사용)
@@ -26,7 +26,7 @@ ENV_FILE="${ENV_FILE:-/opt/apec-booking/.env}"
 DRY_RUN="${DRY_RUN:-0}"
 
 if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 yyyymmdd   (e.g., $0 20251028)"
+  echo "Usage: $0 yyyymmdd   (e.g., $0 20251029)"
   exit 1
 fi
 
