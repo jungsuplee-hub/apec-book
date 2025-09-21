@@ -12,8 +12,18 @@
     .table-scroll{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:12px}
     .danger{background:#c62828;color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
     .danger:hover{filter:brightness(0.95)}
+    .danger.small{padding:6px 10px;font-size:var(--fs-sm)}
     .muted{color:var(--muted)}
     .pill{background:#2b2b2b;border:1px solid var(--line);padding:2px 8px;border-radius:999px}
+    .alert{padding:10px 12px;border-radius:12px;margin-bottom:12px;font-size:var(--fs-sm)}
+    .alert.success{background:#123424;color:#7af9c3;border:1px solid rgba(18,209,142,0.35)}
+    .alert.error{background:#341212;color:#ffb4b4;border:1px solid rgba(255,93,93,0.35)}
+    .company-tier{margin-top:18px}
+    .company-tier h3{margin:0 0 8px;font-size:var(--fs-md);text-transform:uppercase;letter-spacing:0.12em;color:#9ab0d0}
+    .company-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+    .company-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#101b2d}
+    .company-name{font-weight:600}
+    .company-actions{display:flex;gap:8px}
   </style>
 </head>
 <body>
@@ -100,6 +110,55 @@
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section class="card">
+    <h2 class="title">Manage Companies</h2>
+
+    {% if company_error %}
+      <div class="alert error">{{ company_error }}</div>
+    {% elif company_msg %}
+      <div class="alert success">{{ company_msg }}</div>
+    {% endif %}
+
+    <form class="toolbar" method="post" action="/admin/companies/add">
+      <label class="field" style="min-width:160px">
+        <span>Tier</span>
+        <select name="tier" required>
+          {% for tier in company_tiers %}
+            <option value="{{ tier }}">{{ tier }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field" style="flex:1">
+        <span>Company name</span>
+        <input type="text" name="name" placeholder="Enter company name" required />
+      </label>
+      <button type="submit" class="button" style="align-self:flex-end">Add Company</button>
+    </form>
+
+    {% for tier, companies in company_groups.items() %}
+      <div class="company-tier">
+        <h3>{{ tier }}</h3>
+        {% if companies %}
+        <ul class="company-list">
+          {% for company in companies %}
+          <li class="company-item">
+            <span class="company-name">{{ company.name }}</span>
+            <div class="company-actions">
+              <form method="post" action="/admin/companies/delete" onsubmit="return confirm('Delete {{ company.name }}?');">
+                <input type="hidden" name="company_id" value="{{ company.id }}" />
+                <button type="submit" class="danger small">Delete</button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+          <p class="muted">No companies registered.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
   </section>
 </main>
 </body>
