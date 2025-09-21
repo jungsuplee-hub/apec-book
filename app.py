@@ -381,6 +381,11 @@ def display_page(request: Request, room: str, date: str):
 
 
 @app.get("/", response_class=HTMLResponse)
+def redirect_to_booking() -> RedirectResponse:
+    """Serve the booking page as the default landing screen."""
+    return RedirectResponse(url="/booking", status_code=302)
+
+
 @app.get("/rooms", response_class=HTMLResponse)
 def rooms_overview(request: Request):
     """Grouped overview of rooms by sponsor tier."""
