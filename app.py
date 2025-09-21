@@ -133,7 +133,7 @@ def fetch_companies(tier=None):
         if tier:
             cur.execute("SELECT id, name, tier FROM companies WHERE tier=%s ORDER BY name", (tier,))
         else:
-            cur.execute("SELECT id, name, tier FROM companies ORDER BY tier, name")
+            cur.execute("SELECT id, name, tier FROM companies ORDER BY name")
         return list(cur.fetchall())
     finally:
         conn.close()
