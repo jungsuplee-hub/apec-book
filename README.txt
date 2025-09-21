@@ -3,6 +3,7 @@ RHEL9 quick start
 1) Install system deps & MySQL & Nginx (see previous section in this canvas if needed)
 2) Create /opt/apec-booking, copy project files, create venv, install requirements
 3) Configure .env (STORAGE=mysql or xml, SMTP_*, EVENT_* dates)
+   - Ensure you set `APP_PORT=80` so the FastAPI process listens on the standard HTTP port.
 4) MySQL: run models.sql to init schema & seed rooms
 5) systemd service for API:
 
@@ -18,6 +19,8 @@ WorkingDirectory=/opt/apec-booking
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=/opt/apec-booking/.env
 ExecStart=/opt/apec-booking/venv/bin/uvicorn app:app --host ${APP_HOST} --port ${APP_PORT}
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 Restart=always
 
 
