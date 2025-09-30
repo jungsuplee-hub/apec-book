@@ -55,6 +55,7 @@ a:hover{text-decoration:underline}
 }
 .nav{display:flex;align-items:center}
 .nav .link{margin-left:12px;color:#c9d7f2;display:inline-flex;align-items:center;gap:8px}
+.nav .button + .button{margin-left:12px}
 .nav .nav-icon{width:10px;height:10px;border-radius:50%;background:#ffd166;display:inline-block}
 
 .wrap{max-width:1200px;margin:16px auto;padding:0 12px}
