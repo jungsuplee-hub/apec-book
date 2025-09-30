@@ -45,10 +45,10 @@
   <section class="card">
     <h2 class="title">Manage Bookings</h2>
 
-    <form class="toolbar" method="get" action="/admin">
+    <form class="toolbar" method="get" action="/admin" id="booking-filter-form">
       <label class="field">
         <span>Date</span>
-        <select name="date" id="date">
+        <select name="date" id="filter-date">
           {% for d in event_dates %}
             <option value="{{ d }}" {% if d == date %}selected{% endif %}>{{ d }}</option>
           {% endfor %}
@@ -56,7 +56,7 @@
       </label>
       <label class="field">
         <span>Room (optional)</span>
-        <select name="room" id="room">
+        <select name="room" id="filter-room">
           <option value="" {% if not room %}selected{% endif %}>All</option>
           {% for code,label in room_label.items() %}
             <option value="{{ code }}" {% if room == code %}selected{% endif %}>{{ label }}</option>
@@ -163,6 +163,23 @@
     {% endfor %}
   </section>
 </main>
+<script>
+  (function () {
+    const form = document.getElementById('booking-filter-form');
+    if (!form) return;
+
+    const submitOnChange = (elementId) => {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.addEventListener('change', () => {
+        form.requestSubmit();
+      });
+    };
+
+    submitOnChange('filter-date');
+    submitOnChange('filter-room');
+  })();
+</script>
 </body>
 </html>
 
