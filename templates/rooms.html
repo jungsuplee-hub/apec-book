@@ -52,19 +52,6 @@
       transition:transform 0.4s ease;
     }
     .room-card:hover .room-card-image img{transform:scale(1.03);}
-    .room-category{
-      position:absolute;
-      top:12px;
-      left:12px;
-      background:rgba(9,17,32,0.85);
-      border:1px solid rgba(255,255,255,0.12);
-      border-radius:10px;
-      padding:4px 10px;
-      font-size:var(--fs-xs,13px);
-      color:#dbe6ff;
-      text-transform:uppercase;
-      letter-spacing:0.08em;
-    }
     .room-name{margin:0;font-size:var(--fs-lg);font-weight:800;text-transform:uppercase;letter-spacing:0.05em}
     .room-meta{display:grid;gap:8px}
     .room-meta div{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:#d5e3ff}
@@ -111,7 +98,6 @@
       <article class="room-card">
         <div class="room-card-image">
           <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
-          <span class="room-category">{{ room.category }}</span>
         </div>
         <h3 class="room-name">{{ room.name }}</h3>
         <dl class="room-meta">
