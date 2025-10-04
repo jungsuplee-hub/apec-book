@@ -60,8 +60,8 @@ a:hover{text-decoration:underline}
   text-align:center;
   font-family:'NotoSansCJKkr',ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Malgun Gothic,Apple Color Emoji,Segoe UI Emoji;
   font-weight:900;
-  font-size:clamp(22px,2.6vw,34px);
-  letter-spacing:0.28em;
+  font-size:clamp(18px,2.08vw,27px);
+  letter-spacing:normal;
   text-transform:uppercase;
   color:#f5f7ff;
   white-space:nowrap;
@@ -141,7 +141,7 @@ input:focus,select:focus{border-color:#4a68ff;box-shadow:0 0 0 3px rgba(68,85,25
   .title{font-size:var(--fs-lg)}
   .topbar-inner{padding:8px 10px;grid-template-columns:1fr;justify-items:center;text-align:center}
   .brand{justify-content:center}
-  .topbar-title{order:3;white-space:normal;font-size:clamp(18px,6vw,26px);letter-spacing:0.22em}
+  .topbar-title{order:3;white-space:normal;font-size:clamp(14px,4.8vw,21px);letter-spacing:normal}
   .nav{justify-content:center}
   .board table{font-size:16px}
   .table th,.table td{padding:10px 8px}
