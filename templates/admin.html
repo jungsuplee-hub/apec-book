@@ -115,6 +115,93 @@
   </section>
 
   <section class="card">
+    <h2 class="title">Manage Disabled Slots</h2>
+
+    {% if disable_error %}
+      <div class="alert error">{{ disable_error }}</div>
+    {% elif disable_msg %}
+      <div class="alert success">{{ disable_msg }}</div>
+    {% endif %}
+
+    <form class="toolbar" method="post" action="/admin/disabled/add">
+      <label class="field">
+        <span>Date</span>
+        <select name="date" required>
+          {% for d in event_dates %}
+            <option value="{{ d }}" {% if d == date %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Room</span>
+        <select name="room" required>
+          {% for code, label in room_label.items() %}
+            <option value="{{ code }}" {% if room == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Start</span>
+        <select name="start_hour" required>
+          {% for h in hours %}
+            <option value="{{ h }}">{{ "%02d:00" % h }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Blocks</span>
+        <select name="blocks" required>
+          {% for b in range(1, max_blocks + 1) %}
+            <option value="{{ b }}">{{ b }} ({{ b * 60 }} min)</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field" style="flex:1">
+        <span>Note (optional)</span>
+        <input type="text" name="note" placeholder="Reason or memo" />
+      </label>
+      <button type="submit" class="button" style="align-self:flex-end">Disable Slot</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:80px">ID</th>
+            <th style="width:120px">Date</th>
+            <th style="width:160px">Room</th>
+            <th style="width:160px">Time</th>
+            <th>Note</th>
+            <th style="width:110px">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slot in disabled_items %}
+          <tr>
+            <td>{{ slot.id }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ room_label[slot.room_code] if slot.room_code in room_label else slot.room_code }}</td>
+            <td>{{ "%02d:00" % slot.start_hour }} – {{ "%02d:00" % slot.end_hour }}</td>
+            <td>{{ slot.note or '' }}</td>
+            <td>
+              <form method="post" action="/admin/disabled/delete" onsubmit="return confirm('Remove disabled slot #{{ slot.id }}?');">
+                <input type="hidden" name="disabled_id" value="{{ slot.id }}" />
+                <input type="hidden" name="date" value="{{ date }}" />
+                {% if room %}<input type="hidden" name="room" value="{{ room }}" />{% endif %}
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not disabled_items %}
+          <tr><td colspan="6" class="muted" style="text-align:center">No disabled slots for selection.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
     <h2 class="title">Manage Companies</h2>
 
     {% if company_error %}

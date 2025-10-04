@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from urllib.parse import quote_plus
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -248,6 +248,31 @@ def fetch_bookings(date_str: str) -> List[Dict[str, Any]]:
     finally:
         conn.close()
 
+
+def fetch_disabled_slots(date_str: Optional[str] = None, room_code: Optional[str] = None) -> List[Dict[str, Any]]:
+    conn = get_db()
+    try:
+        cur = conn.cursor(DictCursor)
+        query = """
+            SELECT id, date, room_code, start_hour, end_hour, note, created_at
+            FROM disabled_slots
+        """
+        conditions = []
+        params: List[Any] = []
+        if date_str:
+            conditions.append("date=%s")
+            params.append(date_str)
+        if room_code:
+            conditions.append("room_code=%s")
+            params.append(room_code)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY date, room_code, start_hour"
+        cur.execute(query, params)
+        return list(cur.fetchall())
+    finally:
+        conn.close()
+
 def ensure_rooms_seeded(conn=None):
     """Ensure the static room catalog exists in the database."""
 
@@ -294,6 +319,83 @@ def insert_booking(date_str, room_code, tier, company, email, start_hour, blocks
         return cur.lastrowid
     finally:
         conn.close()
+
+
+def find_disabled_conflicts(date_str, room_code, start_hour, end_hour) -> bool:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT 1 FROM disabled_slots
+            WHERE date=%s AND room_code=%s
+              AND NOT (%s <= start_hour OR end_hour <= %s)
+            LIMIT 1
+            """,
+            (date_str, room_code, end_hour, start_hour),
+        )
+        return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def insert_disabled_slot(date_str: str, room_code: str, start_hour: int, blocks: int, note: Optional[str] = None) -> int:
+    end_hour = start_hour + blocks
+    if start_hour not in HOURS or end_hour > HOURS[-1] + 1:
+        raise ValueError("Invalid start hour or duration")
+
+    conn = get_db()
+    try:
+        ensure_rooms_seeded(conn)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT 1 FROM bookings
+            WHERE date=%s AND room_code=%s
+              AND NOT (%s <= start_hour OR end_hour <= %s)
+            LIMIT 1
+            """,
+            (date_str, room_code, end_hour, start_hour),
+        )
+        if cur.fetchone():
+            raise ValueError("A booking already exists in that period")
+
+        cur.execute(
+            """
+            SELECT 1 FROM disabled_slots
+            WHERE date=%s AND room_code=%s
+              AND NOT (%s <= start_hour OR end_hour <= %s)
+            LIMIT 1
+            """,
+            (date_str, room_code, end_hour, start_hour),
+        )
+        if cur.fetchone():
+            raise ValueError("Slot already disabled for that period")
+
+        cur.execute(
+            """
+            INSERT INTO disabled_slots (date, room_code, start_hour, end_hour, note, created_at)
+            VALUES (%s,%s,%s,%s,%s,NOW())
+            """,
+            (date_str, room_code, start_hour, end_hour, note or None),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def delete_disabled_slot(slot_id: int) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM disabled_slots WHERE id=%s", (slot_id,))
+        if cur.rowcount == 0:
+            raise ValueError("Disabled slot not found")
+        conn.commit()
+    finally:
+        conn.close()
+
 
 def delete_booking(booking_id: int):
     conn = get_db()
@@ -507,11 +609,16 @@ def admin_page(
     room: str | None = None,
     company_msg: str | None = None,
     company_error: str | None = None,
+    disable_msg: str | None = None,
+    disable_error: str | None = None,
 ):
     date_val = date or EVENT_DATES[0]
     all_items = fetch_bookings(date_val)
-    if room:
-        all_items = [x for x in all_items if x["room_code"] == room]
+    room_filter = room or None
+    if room_filter:
+        all_items = [x for x in all_items if x["room_code"] == room_filter]
+
+    disabled_items = fetch_disabled_slots(date_val, room_filter)
 
     companies = fetch_companies()
     company_groups: Dict[str, List[Dict[str, Any]]] = {tier: [] for tier in COMPANY_MANAGED_TIERS}
@@ -523,14 +630,19 @@ def admin_page(
         dict(
             request=request,
             date=date_val,
-            room=room,
+            room=room_filter,
             items=all_items,
+            disabled_items=disabled_items,
             event_dates=EVENT_DATES,
             room_label=ROOM_LABEL,
+            hours=HOURS,
+            max_blocks=MAX_BLOCKS,
             company_groups=company_groups,
             company_tiers=COMPANY_MANAGED_TIERS,
             company_msg=company_msg,
             company_error=company_error,
+            disable_msg=disable_msg,
+            disable_error=disable_error,
         ),
     )
 
@@ -591,6 +703,8 @@ def create_booking(
     # --- 룸 시간대 충돌 ---
     if find_conflicts(date, room, start_hour, end_hour):
         raise HTTPException(status_code=409, detail="Time slot already taken")
+    if find_disabled_conflicts(date, room, start_hour, end_hour):
+        raise HTTPException(status_code=409, detail="Time slot blocked by administrator")
 
     # --- 저장 ---
     insert_booking(date, room, tier, company_to_save, email.strip(), start_hour, blocks)
@@ -615,8 +729,10 @@ def availability(date: str, room: str):
         return JSONResponse({"error": "invalid date"}, status_code=400)
     rows = fetch_bookings(date)
     busy = [r for r in rows if r["room_code"] == room]
+    disabled = fetch_disabled_slots(date, room)
     taken = [(int(r["start_hour"]), int(r["end_hour"])) for r in busy]
-    return {"room": room, "date": date, "taken": taken, "items": busy}
+    taken.extend((int(r["start_hour"]), int(r["end_hour"])) for r in disabled)
+    return {"room": room, "date": date, "taken": taken, "items": busy, "disabled": disabled}
 
 @app.get("/api/companies")
 def api_companies(tier: str | None = None):
@@ -631,6 +747,74 @@ def api_daily_check(date: str, company: str):
         return {"ok": False, "reason": "invalid date"}
     total = get_company_daily_total(date, company)
     return {"ok": True, "total": total, "limit": MAX_BLOCKS}
+
+# -------------------- Admin: Disabled slots --------------------
+@app.post("/admin/disabled/add")
+def admin_disabled_add(
+    date: str = Form(...),
+    room: str = Form(...),
+    start_hour: int = Form(...),
+    blocks: int = Form(...),
+    note: str | None = Form(None),
+):
+    redirect_params: List[Tuple[str, str]] = []
+    if date:
+        redirect_params.append(("date", date))
+    if room:
+        redirect_params.append(("room", room))
+
+    message: Optional[Tuple[str, str]] = None
+    try:
+        if date not in EVENT_DATES:
+            raise ValueError("Invalid date selected")
+        if room not in ROOM_LABEL:
+            raise ValueError("Invalid room selected")
+        start_val = int(start_hour)
+        blocks_val = max(1, min(MAX_BLOCKS, int(blocks)))
+        note_val = (note or "").strip()
+        insert_disabled_slot(date, room, start_val, blocks_val, note_val or None)
+    except ValueError as exc:
+        message = ("disable_error", str(exc))
+    except Exception:
+        message = ("disable_error", "Failed to disable time slot")
+    else:
+        end_val = start_val + blocks_val
+        label = ROOM_LABEL.get(room, room)
+        message = ("disable_msg", f"Disabled {label} {date} {start_val:02d}:00 – {end_val:02d}:00")
+
+    if message:
+        redirect_params.append(message)
+
+    qs = ""
+    if redirect_params:
+        qs = "?" + "&".join(f"{key}={quote_plus(value)}" for key, value in redirect_params)
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
+
+@app.post("/admin/disabled/delete")
+def admin_disabled_delete(
+    disabled_id: int = Form(...),
+    date: str | None = Form(None),
+    room: str | None = Form(None),
+):
+    redirect_params: List[Tuple[str, str]] = []
+    if date:
+        redirect_params.append(("date", date))
+    if room:
+        redirect_params.append(("room", room))
+
+    try:
+        delete_disabled_slot(disabled_id)
+    except Exception as exc:
+        redirect_params.append(("disable_error", str(exc)))
+    else:
+        redirect_params.append(("disable_msg", "Disabled slot removed"))
+
+    qs = ""
+    if redirect_params:
+        qs = "?" + "&".join(f"{key}={quote_plus(value)}" for key, value in redirect_params)
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
 
 # ------------------------ Admin: Delete -------------------------
 @app.post("/admin/delete")

@@ -238,19 +238,40 @@
   }
 
   // 보드
-  function renderBoard(date, room, items, blocks){
+  function renderBoard(date, room, data, blocks){
     $('#boardLabel').textContent = `${ROOM_LABEL[room]||room} · ${date} · Blocks ${blocks}`;
     const busyAt = {};
-    (items||[]).forEach(it => { for(let h=it.start_hour; h<it.end_hour; h++) busyAt[h] = {company:it.company,tier:it.tier}; });
+    const items = data.items || [];
+    const disabled = data.disabled || [];
+    items.forEach(it => {
+      for(let h=it.start_hour; h<it.end_hour; h++){
+        busyAt[h] = { type:'booking', company:it.company, tier:it.tier };
+      }
+    });
+    disabled.forEach(slot => {
+      for(let h=slot.start_hour; h<slot.end_hour; h++){
+        busyAt[h] = { type:'disabled', note: slot.note || '' };
+      }
+    });
     let html = '<table class="table"><thead><tr><th style="width:160px">Time</th><th>Status</th><th>Company</th></tr></thead><tbody>';
     for(const h of HOURS){
-      const busy = !!busyAt[h];
-      const status = busy ? '<b class="no">Booked</b>' : '<b class="ok">Available</b>';
-      const company = busy ? `${busyAt[h].company} (${busyAt[h].tier})` : '';
+      const entry = busyAt[h];
+      const busy = !!entry;
+      let status;
+      let info = '';
+      if (entry && entry.type === 'disabled'){
+        status = '<b class="no">Unavailable</b>';
+        info = entry.note || 'Blocked by admin';
+      } else if (entry){
+        status = '<b class="no">Booked</b>';
+        info = `${entry.company} (${entry.tier})`;
+      } else {
+        status = '<b class="ok">Available</b>';
+      }
       html += `<tr data-h="${h}" class="${busy ? '' : 'slot-avail'}">
         <td>${fmt(h)} – ${fmt(h+1)}</td>
         <td>${status}</td>
-        <td>${company}</td>
+        <td>${info}</td>
       </tr>`;
     }
     html += '</tbody></table>';
@@ -281,7 +302,7 @@
     if(!date || !room) return;
     const data = await apiAvailability(date, room);
     await refreshStart();
-    renderBoard(date, room, data.items||[], blocks);
+    renderBoard(date, room, data, blocks);
   }
 
   // 하루 2시간 제한 사전 안내/차단
