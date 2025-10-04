@@ -129,6 +129,7 @@
   const EVENT_DATES    = {{ event_dates|tojson|safe }};
   const ALL_ROOMS      = {{ all_room_codes|tojson|safe }};
   const ROOM_LABEL     = {{ room_label|tojson|safe }};
+  const ROOMS_BY_TIER  = {{ rooms_by_tier|tojson|safe }};
   const HOURS          = {{ hours|tojson|safe }};
   const MAX_BLOCKS     = {{ max_blocks|tojson|safe }};
   const INITIAL_DATE   = {{ initial_date|tojson|safe }};
@@ -173,14 +174,20 @@
   }
   function isOtherSelected(){ return $('#company').value === 'Other'; }
 
+  function roomsForTier(tier){
+    const codes = ROOMS_BY_TIER && ROOMS_BY_TIER[tier];
+    return Array.isArray(codes) ? codes.slice() : [];
+  }
+
   function populateRooms(codes){
     const sel = $('#room');
     const previous = sel.value;
-    sel.innerHTML = codes.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
-    if(previous && codes.includes(previous)){
+    const list = Array.isArray(codes) && codes.length ? codes : ALL_ROOMS;
+    sel.innerHTML = list.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
+    if(previous && list.includes(previous)){
       sel.value = previous;
-    } else if(codes.length){
-      sel.value = codes[0];
+    } else if(list.length){
+      sel.value = list[0];
     }
   }
 
@@ -188,7 +195,7 @@
     $('#companyOtherField').classList.remove('hidden');
     $('#tierView').value = 'Other';
     $('#tier').value = 'Other';
-    populateRooms(ALL_ROOMS);
+    populateRooms(roomsForTier('Other'));
   }
   function exitOtherMode(){
     $('#companyOtherField').classList.add('hidden');
@@ -204,7 +211,8 @@
     const tier = opt?.dataset?.tier || '';
     $('#tierView').value = tier || '(Unknown)';
     $('#tier').value = tier || '';
-    populateRooms(ALL_ROOMS);
+    const allowed = roomsForTier(tier);
+    populateRooms(allowed);
   }
 
   // 시작 옵션
