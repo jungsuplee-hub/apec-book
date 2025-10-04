@@ -28,7 +28,7 @@
   <div class="topbar-inner">
     <div class="brand">
       <a href="/" class="brand-logo" aria-label="Home">
-        <img src="/static/logo-apec.svg" alt="APEC" />
+        <img src="/static/logo-apec.png" alt="APEC" />
       </a>
       <div class="title">
         <span class="eyebrow">APEC CEO Summit Korea 2025</span>
