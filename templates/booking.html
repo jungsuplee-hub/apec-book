@@ -26,7 +26,6 @@
     }
     #dateField input[type="date"]{ padding-left:62px }
     .hidden{display:none}
-    .locked { pointer-events:none; background:#222; color:#aaa; }
   </style>
 </head>
 <body>
@@ -127,13 +126,12 @@
 </main>
 
 <script>
-  const EVENT_DATES   = {{ event_dates|tojson|safe }};
-  const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
-  const ROOM_LABEL    = {{ room_label|tojson|safe }};
-  const HOURS         = {{ hours|tojson|safe }};
-  const MAX_BLOCKS    = {{ max_blocks|tojson|safe }};
-  const INITIAL_DATE  = {{ initial_date|tojson|safe }};
-  const OTHER_ROOM    = {{ OTHER_ROOM_CODE|tojson|safe }};
+  const EVENT_DATES    = {{ event_dates|tojson|safe }};
+  const ALL_ROOMS      = {{ all_room_codes|tojson|safe }};
+  const ROOM_LABEL     = {{ room_label|tojson|safe }};
+  const HOURS          = {{ hours|tojson|safe }};
+  const MAX_BLOCKS     = {{ max_blocks|tojson|safe }};
+  const INITIAL_DATE   = {{ initial_date|tojson|safe }};
 
   const $ = (s, r=document) => r.querySelector(s);
   const fmt = h => String(h).padStart(2,'0') + ':00';
@@ -175,27 +173,38 @@
   }
   function isOtherSelected(){ return $('#company').value === 'Other'; }
 
+  function populateRooms(codes){
+    const sel = $('#room');
+    const previous = sel.value;
+    sel.innerHTML = codes.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
+    if(previous && codes.includes(previous)){
+      sel.value = previous;
+    } else if(codes.length){
+      sel.value = codes[0];
+    }
+  }
+
   function enterOtherMode(){
     $('#companyOtherField').classList.remove('hidden');
-    $('#tierView').value = 'General';
-    $('#tier').value = 'General';
-    $('#room').innerHTML = `<option value="${OTHER_ROOM}">${ROOM_LABEL[OTHER_ROOM]||OTHER_ROOM}</option>`;
-    $('#room').classList.add('locked');
+    $('#tierView').value = 'Other';
+    $('#tier').value = 'Other';
+    populateRooms(ALL_ROOMS);
   }
   function exitOtherMode(){
     $('#companyOtherField').classList.add('hidden');
-    $('#room').classList.remove('locked');
   }
 
   function applyTierFromCompany(){
-    if(isOtherSelected()){ enterOtherMode(); return; }
+    if(isOtherSelected()){
+      enterOtherMode();
+      return;
+    }
     exitOtherMode();
     const opt = $('#company option:checked');
     const tier = opt?.dataset?.tier || '';
     $('#tierView').value = tier || '(Unknown)';
     $('#tier').value = tier || '';
-    const rooms = ROOMS_BY_TIER[tier] || [];
-    $('#room').innerHTML = rooms.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
+    populateRooms(ALL_ROOMS);
   }
 
   // 시작 옵션

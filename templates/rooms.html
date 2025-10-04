@@ -22,23 +22,7 @@
       color:#d5e3ff;
       font-size:var(--fs-sm);
     }
-    .tier-group{margin-top:28px;display:flex;flex-direction:column;gap:16px}
-    .tier-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-    .badge-tier{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 14px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,0.18);
-      background:rgba(9,17,32,0.7);
-      font-size:var(--fs-sm);
-      font-weight:700;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-    }
-    .tier-name{color:var(--muted);font-size:var(--fs-sm)}
-    .room-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+    .room-card-grid{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
     .highlight{color:#ffd166;font-weight:700}
     .room-card{
       border:1px solid var(--line);
@@ -112,40 +96,33 @@
     <ul class="guide-notes">
       <li><strong>Meeting rooms</strong> are available for reservation <span class="highlight">up to two times per day</span>, with each session <span class="highlight">limited to 45 minutes.</span></li>
       <li>Explore the meeting rooms curated for <strong>APEC CEO Summit Korea 2025</strong>. Tap the room to see detailed amenities.</li>
+      <li>All registered companies — including <strong>Other</strong> entries — can reserve <strong>any meeting room</strong>.</li>
     </ul>
 
-    {% for section in sections %}
-    <div class="tier-group">
-      <div class="tier-header">
-        <div class="badge-tier">{{ section.tier_label }}</div>
-        <span class="tier-name">{{ section.tier }}</span>
-      </div>
-      <div class="room-card-grid">
-        {% for room in section.rooms %}
-        <article class="room-card">
-          <div class="room-card-image">
-            <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
-            <span class="room-category">{{ room.category }}</span>
-          </div>
-          <h3 class="room-name">{{ room.name }}</h3>
-          <dl class="room-meta">
-            <div><dt>Location</dt><dd>{{ room.location }}</dd></div>
-            <div><dt>Capacity</dt><dd>{{ room.capacity }} pax</dd></div>
-            <div><dt>Meeting Room Code</dt><dd>{{ room.meeting_code }}</dd></div>
-          </dl>
-          <div class="room-features">
-            {% for feature in room.features %}
-            <span class="chip-small">{{ feature }}</span>
-            {% endfor %}
-          </div>
-          <div class="room-card-footer">
-            <a class="button" href="/rooms/{{ room.code }}">View details</a>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
+    <div class="room-card-grid">
+      {% for room in rooms %}
+      <article class="room-card">
+        <div class="room-card-image">
+          <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
+          <span class="room-category">{{ room.category }}</span>
+        </div>
+        <h3 class="room-name">{{ room.name }}</h3>
+        <dl class="room-meta">
+          <div><dt>Location</dt><dd>{{ room.location }}</dd></div>
+          <div><dt>Capacity</dt><dd>{{ room.capacity }} pax</dd></div>
+          <div><dt>Meeting Room Code</dt><dd>{{ room.meeting_code }}</dd></div>
+        </dl>
+        <div class="room-features">
+          {% for feature in room.features %}
+          <span class="chip-small">{{ feature }}</span>
+          {% endfor %}
+        </div>
+        <div class="room-card-footer">
+          <a class="button" href="/rooms/{{ room.code }}">View details</a>
+        </div>
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
   </section>
 </main>
 </body>

@@ -13,7 +13,6 @@
     .hero-code{position:absolute;top:18px;right:18px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(9,17,32,0.85);font-weight:700;letter-spacing:0.08em}
     .hero-category{position:absolute;bottom:18px;left:18px;padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(9,17,32,0.75);font-size:var(--fs-xs,13px);letter-spacing:0.08em;text-transform:uppercase;color:#dbe6ff}
     .hero-details{display:flex;flex-direction:column;gap:14px}
-    .badge-tier{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(9,17,32,0.8);font-size:var(--fs-sm);font-weight:700;letter-spacing:0.08em;text-transform:uppercase}
     .hero-meta{display:grid;gap:10px;margin:0}
     .hero-meta div{display:flex;justify-content:space-between;gap:12px;font-size:var(--fs-sm);color:#dbe6ff}
     .hero-meta dt{opacity:0.65}
@@ -50,7 +49,6 @@
         <span class="hero-category">{{ details.category }}</span>
       </div>
       <div class="hero-details">
-        <div class="badge-tier">{{ tier_label }}</div>
         <h1 class="title" style="margin:0">{{ room_name }}</h1>
         <dl class="hero-meta">
           <div><dt>Location</dt><dd>{{ details.location }}</dd></div>
