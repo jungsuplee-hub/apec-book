@@ -638,26 +638,6 @@ def rooms_overview(request: Request):
         "rooms.html",
         dict(request=request, rooms=ROOMS_SORTED),
     )
-
-
-@app.get("/rooms/{room_code}", response_class=HTMLResponse)
-def room_detail(request: Request, room_code: str):
-    if room_code not in ROOM_DETAILS:
-        raise HTTPException(status_code=404, detail="Room not found")
-    details = ROOM_DETAILS[room_code]
-    schedule_date = request.query_params.get("date") or EVENT_DATES[0]
-    return templates.TemplateResponse(
-        "room_detail.html",
-        dict(
-            request=request,
-            room_code=room_code,
-            room_name=details["name"],
-            details=details,
-            schedule_date=schedule_date,
-        ),
-    )
-
-
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page(
     request: Request,
