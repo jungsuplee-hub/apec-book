@@ -80,3 +80,11 @@ WantedBy=timers.target
 sudo systemctl daemon-reload
 sudo systemctl enable --now apec-booking
 sudo systemctl enable --now apec-digest.timer
+
+
+예약 차단 테이블 초기화 방법
+---------------------------
+1) `/opt/apec-booking/.env` 또는 `ENV_FILE` 환경 변수로 지정한 경로에 데이터베이스 접속 정보가 올바르게 설정되어 있는지 확인합니다.
+2) 프로젝트 루트에서 `./reset_disabled_slots.sh`를 실행합니다.
+   - 이 스크립트는 `disabled_slots` 테이블을 **DROP** 한 뒤 동일한 스키마로 다시 생성합니다.
+   - 실행 시 테이블에 저장돼 있던 예약 차단 데이터가 모두 삭제되니 주의하세요.
