@@ -209,7 +209,7 @@ ROOMS_DATA = [
 
 ROOM_DETAILS = {room["code"]: room for room in ROOMS_DATA}
 ROOM_LABEL = {
-    code: f"{details['meeting_code']} · {details['name']}"
+    code: details["name"]
     for code, details in ROOM_DETAILS.items()
 }
 

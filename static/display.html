@@ -26,10 +26,10 @@ th{background:#111827}
 const params=new URLSearchParams(location.search);
 const room=params.get('room')||'DM1';
 const label={
-  'DM1':'DM1 · Meeting Room 1','DM2':'DM2 · Meeting Room 2','DM3':'DM3 · Meeting Room 3','DM4':'DM4 · Meeting Room 4',
-  'PM1':'PM1 · Meeting Room 5','PM2':'PM2 · Meeting Room 6','PM3':'PM3 · Meeting Room 7','PM4':'PM4 · Meeting Room 8',
-  'GM1':'GM1 · Meeting Room 9','GM2':'GM2 · Outdoor Meeting Room 1 (Hyundai Office Bus)','GM3':'GM3 · Outdoor Meeting Room 2 (Hyundai Office Bus)',
-  'NM1':'NM1 · Media Interview Room'
+  'DM1':'Meeting Room 1','DM2':'Meeting Room 2','DM3':'Meeting Room 3','DM4':'Meeting Room 4',
+  'PM1':'Meeting Room 5','PM2':'Meeting Room 6','PM3':'Meeting Room 7','PM4':'Meeting Room 8',
+  'GM1':'Meeting Room 9','GM2':'Outdoor Meeting Room 1 (Hyundai Office Bus)','GM3':'Outdoor Meeting Room 2 (Hyundai Office Bus)',
+  'NM1':'Media Interview Room'
 };
 const HOURS=Array.from({length:17},(_,i)=>i+6);
 function fmt(h){return String(h).padStart(2,'0')+':00'}
