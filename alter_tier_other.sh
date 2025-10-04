@@ -35,7 +35,11 @@ echo "Step 1) Expand ENUM to include both General and Other (safe widen)"
 echo "--------------"
 mysql --protocol=TCP -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" "$MYSQL_DB" <<'SQL'
 ALTER TABLE bookings
-  MODIFY COLUMN tier ENUM('Diamond','Platinum','Gold','General','Other') NOT NULL;
+  MODIFY COLUMN tier ENUM(
+    'Diamond','Platinum','Gold','Legal Partner','Knowledge Partner',
+    'Media Partner - Premier','Media Partner - Platinum','Media Partner - Gold',
+    'General','Other'
+  ) NOT NULL;
 SQL
 
 echo "--------------"
@@ -49,7 +53,11 @@ echo "Step 3) Shrink ENUM to remove General"
 echo "--------------"
 mysql --protocol=TCP -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" "$MYSQL_DB" <<'SQL'
 ALTER TABLE bookings
-  MODIFY COLUMN tier ENUM('Diamond','Platinum','Gold','Other') NOT NULL;
+  MODIFY COLUMN tier ENUM(
+    'Diamond','Platinum','Gold','Legal Partner','Knowledge Partner',
+    'Media Partner - Premier','Media Partner - Platinum','Media Partner - Gold',
+    'Other'
+  ) NOT NULL;
 SQL
 
 echo "--------------"

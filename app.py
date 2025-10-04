@@ -32,16 +32,21 @@ MAX_BLOCKS = 2              # 1h/block, 최대 2블록 = 2시간
 
 # 룸/티어 정의
 ROOM_TIER_LABELS = {
-    "Diamond": "Diamond Sponsor Only",
-    "Platinum": "Platinum Sponsor Only",
-    "Gold": "Gold Sponsor Only",
-    "General": "General Only",
+    "Diamond": "Diamond Sponsor",
+    "Platinum": "Platinum Sponsor",
+    "Gold": "Gold Sponsor",
+    "Legal Partner": "Legal Partner",
+    "Knowledge Partner": "Knowledge Partner",
+    "Media Partner - Premier": "Media Partner - Premier",
+    "Media Partner - Platinum": "Media Partner - Platinum",
+    "Media Partner - Gold": "Media Partner - Gold",
+    "Other": "Other",
 }
 
 TIER_ORDER = list(ROOM_TIER_LABELS)
 TIER_INDEX = {tier: idx for idx, tier in enumerate(TIER_ORDER)}
 
-COMPANY_MANAGED_TIERS = [tier for tier in TIER_ORDER if tier != "General"]
+COMPANY_MANAGED_TIERS = [tier for tier in TIER_ORDER if tier != "Other"]
 
 ROOMS_DATA = [
     {
@@ -86,9 +91,9 @@ ROOMS_DATA = [
     {
         "code": "DM4",
         "tier": "Diamond",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
+        "name": "Meeting Room 4",
+        "category": "Indoor Meeting Suite",
+        "location": "1F",
         "capacity": 7,
         "meeting_code": "DM4",
         "summary": "",
@@ -99,7 +104,7 @@ ROOMS_DATA = [
     {
         "code": "PM1",
         "tier": "Platinum",
-        "name": "Meeting Room 1",
+        "name": "Meeting Room 5",
         "category": "Indoor Meeting Suite",
         "location": "1F",
         "capacity": 8,
@@ -112,7 +117,7 @@ ROOMS_DATA = [
     {
         "code": "PM2",
         "tier": "Platinum",
-        "name": "Meeting Room 2",
+        "name": "Meeting Room 6",
         "category": "Indoor Meeting Suite",
         "location": "B1",
         "capacity": 8,
@@ -125,7 +130,7 @@ ROOMS_DATA = [
     {
         "code": "PM3",
         "tier": "Platinum",
-        "name": "Meeting Room 3",
+        "name": "Meeting Room 7",
         "category": "Indoor Meeting Suite",
         "location": "B1",
         "capacity": 6,
@@ -138,9 +143,9 @@ ROOMS_DATA = [
     {
         "code": "PM4",
         "tier": "Platinum",
-        "name": "Outdoor F&B Zone, Office Bus",
-        "category": "Outdoor F&B Zone, Office Bus",
-        "location": "F&B Zone",
+        "name": "Meeting Room 8",
+        "category": "Indoor Meeting Suite",
+        "location": "B1",
         "capacity": 7,
         "meeting_code": "PM4",
         "summary": "",
@@ -151,7 +156,7 @@ ROOMS_DATA = [
     {
         "code": "GM1",
         "tier": "Gold",
-        "name": "Meeting Room 1",
+        "name": "Meeting Room 9",
         "category": "Indoor Meeting Suite",
         "location": "B1",
         "capacity": 6,
@@ -163,10 +168,10 @@ ROOMS_DATA = [
     },
     {
         "code": "GM2",
-        "tier": "Gold",
-        "name": "Meeting Room 2",
-        "category": "Indoor Meeting Suite",
-        "location": "B1",
+        "tier": "Other",
+        "name": "Outdoor Meeting Room 1 (Hyundai Office Bus)",
+        "category": "Outdoor Meeting Suite",
+        "location": "F&B Zone",
         "capacity": 6,
         "meeting_code": "GM2",
         "summary": "",
@@ -176,10 +181,10 @@ ROOMS_DATA = [
     },
     {
         "code": "GM3",
-        "tier": "Gold",
-        "name": "OUTDOOR F&B ZONE_OFFICE BUS",
-        "category": "OUTDOOR F&B ZONE_OFFICE BUS",
-        "location": "F&B ZONE",
+        "tier": "Other",
+        "name": "Outdoor Meeting Room 2 (Hyundai Office Bus)",
+        "category": "Outdoor Meeting Suite",
+        "location": "F&B Zone",
         "capacity": 7,
         "meeting_code": "GM3",
         "summary": "",
@@ -189,10 +194,10 @@ ROOMS_DATA = [
     },
     {
         "code": "NM1",
-        "tier": "General",
-        "name": "OUTDOOR F&B ZONE_OFFICE BUS",
-        "category": "OUTDOOR F&B ZONE_OFFICE BUS",
-        "location": "MAIN ENTERANCE",
+        "tier": "Other",
+        "name": "Media Interview Room",
+        "category": "Media Suite",
+        "location": "Main Entrance",
         "capacity": 7,
         "meeting_code": "NM1",
         "summary": "",
@@ -213,10 +218,21 @@ ROOMS_SORTED = sorted(
     key=lambda r: (TIER_INDEX[r["tier"]], r["order"], r["code"]),
 )
 ALL_ROOM_CODES = [room["code"] for room in ROOMS_SORTED]
-ROOMS_BY_TIER: dict[str, list[str]] = {}
-for tier in ROOM_TIER_LABELS:
-    ROOMS_BY_TIER[tier] = list(ALL_ROOM_CODES)
-ROOMS_BY_TIER["Other"] = list(ALL_ROOM_CODES)
+MEETING_ROOMS = ["DM1", "DM2", "DM3", "DM4", "PM1", "PM2", "PM3", "PM4", "GM1"]
+OUTDOOR_ROOMS = ["GM2", "GM3"]
+MEDIA_ROOMS = ["GM2", "GM3", "NM1"]
+
+ROOMS_BY_TIER: dict[str, list[str]] = {
+    "Diamond": list(MEETING_ROOMS),
+    "Platinum": list(MEETING_ROOMS),
+    "Gold": list(MEETING_ROOMS),
+    "Legal Partner": list(MEETING_ROOMS),
+    "Knowledge Partner": list(MEETING_ROOMS),
+    "Media Partner - Premier": list(MEDIA_ROOMS),
+    "Media Partner - Platinum": list(MEDIA_ROOMS),
+    "Media Partner - Gold": list(MEDIA_ROOMS),
+    "Other": list(OUTDOOR_ROOMS),
+}
 
 app = FastAPI(title="APEC Meeting Rooms Booking")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -514,6 +530,7 @@ def booking_page(request: Request):
             event_dates=EVENT_DATES,
             all_room_codes=ALL_ROOM_CODES,
             room_label=ROOM_LABEL,
+            rooms_by_tier=ROOMS_BY_TIER,
             hours=HOURS,
             initial_date=initial_date,
             max_blocks=MAX_BLOCKS,
@@ -659,7 +676,7 @@ def create_booking(
         real_company = (company_other or "").strip()
         if not real_company:
             raise HTTPException(status_code=400, detail="Company name required for Other")
-        tier = "General"
+        tier = "Other"
         company_to_save = real_company
     else:
         db_tier = get_company_tier(company)
@@ -667,6 +684,10 @@ def create_booking(
             raise HTTPException(status_code=400, detail="Unknown company")
         tier = db_tier
         company_to_save = company.strip()
+
+    allowed_rooms = ROOMS_BY_TIER.get(tier, [])
+    if allowed_rooms and room not in allowed_rooms:
+        raise HTTPException(status_code=403, detail="Selected room not available for this tier")
 
     # --- 시간/블록 검증 ---
     blocks = max(1, min(MAX_BLOCKS, int(blocks)))
