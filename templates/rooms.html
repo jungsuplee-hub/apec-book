@@ -43,6 +43,7 @@
       background:#060b15;
       overflow:hidden;
       aspect-ratio:4/3;
+      cursor:zoom-in;
     }
     .room-card-image img{
       width:100%;
@@ -59,8 +60,64 @@
     .room-meta dd{margin:0;font-weight:700}
     .room-features{display:flex;flex-wrap:wrap;gap:8px}
     .chip-small{border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:6px 12px;font-size:var(--fs-xs,13px);color:#e9f1ff;background:rgba(255,255,255,0.06)}
-    .room-card-footer{margin-top:auto;display:flex;justify-content:flex-end}
-    .room-card .button{background:#ffd166;color:#0b1020;font-weight:700}
+    .image-lightbox{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:30px;
+      background:rgba(5,10,25,0.85);
+      z-index:999;
+    }
+    .image-lightbox.is-visible{display:flex;}
+    .image-lightbox[aria-hidden="true"]{display:none;}
+    .image-lightbox-backdrop{position:absolute;inset:0;}
+    .image-lightbox-content{
+      position:relative;
+      max-width:min(900px,90vw);
+      max-height:90vh;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      background:rgba(10,20,40,0.96);
+      border:1px solid rgba(255,255,255,0.18);
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 20px 40px rgba(0,0,0,0.4);
+    }
+    .image-lightbox img{
+      width:100%;
+      max-height:60vh;
+      object-fit:contain;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:#040915;
+    }
+    .image-lightbox-title{margin:0;font-size:var(--fs-lg);font-weight:700;color:#fff;}
+    .image-lightbox-close{
+      position:absolute;
+      top:14px;
+      right:14px;
+      border:none;
+      background:rgba(9,15,30,0.8);
+      color:#fff;
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      transition:background 0.2s ease;
+    }
+    .image-lightbox-close:hover,
+    .image-lightbox-close:focus{background:rgba(255,255,255,0.2);outline:none;}
+    @media (max-width:768px){
+      .image-lightbox{padding:16px;}
+      .image-lightbox-content{padding:18px;}
+    }
     @media (max-width:768px){
       .room-card{padding:16px}
     }
@@ -86,7 +143,7 @@
     <h1 class="title">Room Guide</h1>
     <ul class="guide-notes">
       <li><strong>Each company</strong> may reserve <span class="highlight">up to two meeting times per day</span>, with a <span class="highlight">60-minute session per booking</span> (including 45 minutes of use and 15 minutes for cleanup).</li>
-      <li>Explore the meeting rooms curated for <strong>APEC CEO Summit Korea 2025</strong>. Tap the room to see detailed amenities.</li>
+      <li>Explore the meeting rooms curated for <strong>APEC CEO Summit Korea 2025</strong>. Tap the room image to enlarge it and see detailed amenities.</li>
       <li><strong>Meeting Rooms 1–9</strong> are available to <strong>Diamond</strong>, <strong>Platinum</strong>, <strong>Gold</strong>, <strong>Legal Partner</strong>, and <strong>Knowledge Partner</strong> tiers.</li>
       <li><strong>Outdoor Meeting Rooms 1 &amp; 2</strong> and the <strong>Media Interview Room</strong> are allocated to <strong>Media Partner - Premier</strong>, <strong>Media Partner - Platinum</strong>, and <strong>Media Partner - Gold</strong> tiers.</li>
       <li><strong>Other</strong> entries may reserve <strong>Outdoor Meeting Rooms 1 &amp; 2</strong>.</li>
@@ -96,7 +153,7 @@
     <div class="room-card-grid">
       {% for room in rooms %}
       <article class="room-card">
-        <div class="room-card-image">
+        <div class="room-card-image" role="button" tabindex="0" aria-label="View larger image of {{ room.name }}" data-room-image="{{ room.image }}" data-room-name="{{ room.name }}">
           <img src="{{ room.image }}" alt="{{ room.name }}" loading="lazy" />
         </div>
         <h3 class="room-name">{{ room.name }}</h3>
@@ -109,13 +166,84 @@
           <span class="chip-small">{{ feature }}</span>
           {% endfor %}
         </div>
-        <div class="room-card-footer">
-          <a class="button" href="/rooms/{{ room.code }}">View details</a>
-        </div>
       </article>
       {% endfor %}
     </div>
   </section>
 </main>
+
+<div class="image-lightbox" id="roomLightbox" aria-hidden="true">
+  <div class="image-lightbox-backdrop" data-dismiss></div>
+  <div class="image-lightbox-content" role="dialog" aria-modal="true" aria-labelledby="roomLightboxTitle">
+    <button class="image-lightbox-close" type="button" data-dismiss aria-label="Close image">&times;</button>
+    <h2 class="image-lightbox-title" id="roomLightboxTitle"></h2>
+    <img src="" alt="" id="roomLightboxImage" />
+  </div>
+</div>
+
+<script>
+  (function () {
+    const lightbox = document.getElementById('roomLightbox');
+    if (!lightbox) return;
+
+    const titleEl = document.getElementById('roomLightboxTitle');
+    const imageEl = document.getElementById('roomLightboxImage');
+    const closeButton = lightbox.querySelector('.image-lightbox-close');
+    const dismissSelectors = '[data-dismiss]';
+    const ACTIVATE_KEYS = ['Enter', ' ', 'Spacebar'];
+    let lastFocused = null;
+
+    function openLightbox(name, imageSrc) {
+      lastFocused = document.activeElement;
+      titleEl.textContent = name;
+      imageEl.src = imageSrc;
+      imageEl.alt = name;
+      lightbox.classList.add('is-visible');
+      lightbox.setAttribute('aria-hidden', 'false');
+      if (closeButton) {
+        closeButton.focus();
+      }
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('is-visible');
+      lightbox.setAttribute('aria-hidden', 'true');
+      imageEl.src = '';
+      document.body.style.overflow = '';
+      if (lastFocused && typeof lastFocused.focus === 'function') {
+        lastFocused.focus();
+      }
+    }
+
+    lightbox.addEventListener('click', (event) => {
+      if (event.target.matches(dismissSelectors)) {
+        closeLightbox();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && lightbox.classList.contains('is-visible')) {
+        closeLightbox();
+      }
+    });
+
+    document.querySelectorAll('.room-card-image').forEach((el) => {
+      const name = el.getAttribute('data-room-name');
+      const imageSrc = el.getAttribute('data-room-image');
+
+      function handleActivate(event) {
+        if (event.type === 'keydown' && !ACTIVATE_KEYS.includes(event.key)) {
+          return;
+        }
+        event.preventDefault();
+        openLightbox(name, imageSrc);
+      }
+
+      el.addEventListener('click', handleActivate);
+      el.addEventListener('keydown', handleActivate);
+    });
+  })();
+</script>
 </body>
 </html>
