@@ -117,6 +117,9 @@ input:focus,select:focus{border-color:#4a68ff;box-shadow:0 0 0 3px rgba(68,85,25
 .table td{font-size:var(--fs-md)}
 .table-scroll{overflow:auto; -webkit-overflow-scrolling:touch}
 
+.table tr.is-current{outline:2px solid #ffd166;outline-offset:-2px;background:rgba(255,209,102,.08)}
+.table tr.is-current td{border-bottom-color:rgba(255,209,102,.5)}
+
 /* Status colors */
 .ok{color:var(--ok);font-weight:700}
 .no{color:#ff7676;font-weight:700}
