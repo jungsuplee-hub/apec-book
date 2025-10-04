@@ -76,7 +76,7 @@
         status = '<b class="ok">Available</b>';
         company = '';
       }
-      html += `<tr>
+      html += `<tr data-hour="${h}">
         <td data-label="Time">${fmt(h)} – ${fmt(h+1)}</td>
         <td data-label="Status">${status}</td>
         <td data-label="Company">${company}</td>
@@ -88,6 +88,45 @@
     const ts = new Date().toLocaleTimeString();
     const lu = $('#lastUpdated');
     if (lu) lu.textContent = 'Updated: ' + ts;
+    highlightCurrentSlot();
+  }
+
+  function highlightCurrentSlot(){
+    const grid = $('#grid');
+    if(!grid) return;
+
+    grid.querySelectorAll('tbody tr').forEach(row => row.classList.remove('is-current'));
+
+    if(!DATE) return;
+    const parts = DATE.split('-').map(Number);
+    if(parts.length !== 3) return;
+
+    const [year, month, day] = parts;
+    if(!year || !month || !day) return;
+
+    const today = new Date();
+    const target = new Date(year, month - 1, day);
+    if(
+      today.getFullYear() !== target.getFullYear() ||
+      today.getMonth() !== target.getMonth() ||
+      today.getDate() !== target.getDate()
+    ){
+      return;
+    }
+
+    if(!HOURS || !HOURS.length) return;
+    const startHour = HOURS[0];
+    const endHour = HOURS[HOURS.length - 1];
+
+    let hour = today.getHours();
+    if(hour < startHour){
+      hour = startHour;
+    }else if(hour > endHour){
+      hour = endHour;
+    }
+
+    const row = grid.querySelector(`tbody tr[data-hour="${hour}"]`);
+    if(row) row.classList.add('is-current');
   }
 
   async function refresh(){
