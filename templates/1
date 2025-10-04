@@ -214,8 +214,8 @@
 
   function defaultDate(){
     const today = new Date().toISOString().slice(0,10);
-    if (today >= EVENT_DATES[0] && today <= EVENT_DATES[EVENT_DATES.length-1]) return today;
-    return EVENT_DATES[0];
+    const upcoming = EVENT_DATES.find(d => today <= d);
+    return upcoming || EVENT_DATES[0];
   }
 
   function initFromURL(){
