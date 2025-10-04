@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus
 from typing import List, Dict, Any, Tuple, Optional
 
 from fastapi import FastAPI, Request, Form, HTTPException
@@ -59,7 +59,7 @@ ROOMS_DATA = [
         "meeting_code": "DM1",
         "summary": "",
         "features": ["Sofa and Table", "TV", "HDMI"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 1.jpg')}",
         "order": 1,
     },
     {
@@ -72,7 +72,7 @@ ROOMS_DATA = [
         "meeting_code": "DM2",
         "summary": "",
         "features": ["Chair and Table", "Delegation Mic.", "Podium"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 2.jpg')}",
         "order": 2,
     },
     {
@@ -85,7 +85,7 @@ ROOMS_DATA = [
         "meeting_code": "DM3",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 3.png')}",
         "order": 3,
     },
     {
@@ -98,7 +98,7 @@ ROOMS_DATA = [
         "meeting_code": "DM4",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 4.jpg')}",
         "order": 4,
     },
     {
@@ -111,7 +111,7 @@ ROOMS_DATA = [
         "meeting_code": "PM1",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 5.jpg')}",
         "order": 1,
     },
     {
@@ -124,7 +124,7 @@ ROOMS_DATA = [
         "meeting_code": "PM2",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 6.jpg')}",
         "order": 2,
     },
     {
@@ -137,7 +137,7 @@ ROOMS_DATA = [
         "meeting_code": "PM3",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 7.png')}",
         "order": 3,
     },
     {
@@ -150,7 +150,7 @@ ROOMS_DATA = [
         "meeting_code": "PM4",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 8.jpg')}",
         "order": 4,
     },
     {
@@ -163,7 +163,7 @@ ROOMS_DATA = [
         "meeting_code": "GM1",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Meeting Room 9.png')}",
         "order": 1,
     },
     {
@@ -176,7 +176,7 @@ ROOMS_DATA = [
         "meeting_code": "GM2",
         "summary": "",
         "features": [],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Outdoor Meeting Room 1 (Hyundai Office Bus).png')}",
         "order": 2,
     },
     {
@@ -189,7 +189,7 @@ ROOMS_DATA = [
         "meeting_code": "GM3",
         "summary": "",
         "features": [],
-        "image": "/static/images/rooms/indoor-suite.svg",
+        "image": f"/static/rooms/{quote('Outdoor Meeting Room 2 (Hyundai Office Bus).png')}",
         "order": 3,
     },
     {
@@ -202,7 +202,7 @@ ROOMS_DATA = [
         "meeting_code": "NM1",
         "summary": "",
         "features": ["Sofa and Table"],
-        "image": "/static/images/rooms/outdoor-terrace.svg",
+        "image": f"/static/rooms/{quote('Media Interview Room.jpg')}",
         "order": 1,
     },
 ]
