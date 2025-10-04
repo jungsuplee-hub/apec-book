@@ -44,18 +44,41 @@
   const DATE   = {{ date|tojson|safe }};
   const HOURS  = {{ hours|tojson|safe }};
   const ITEMS  = {{ (items or [])|tojson|safe }};
+  const DISABLED = {{ (disabled or [])|tojson|safe }};
 
   const $ = s => document.querySelector(s);
   const fmt = h => String(h).padStart(2,'0') + ':00';
 
-  function render(items){
+  function render(items, disabled){
     const busyAt = {};
-    (items||[]).forEach(it => { for(let h=it.start_hour; h<it.end_hour; h++) busyAt[h] = {company: it.company, tier: it.tier}; });
+    (disabled || []).forEach(it => {
+      for(let h = it.start_hour; h < it.end_hour; h++){
+        busyAt[h] = { status: 'disabled', note: it.note };
+      }
+    });
+    (items || []).forEach(it => {
+      for(let h = it.start_hour; h < it.end_hour; h++){
+        busyAt[h] = { status: 'booked', company: it.company, tier: it.tier };
+      }
+    });
+
     let html = '<table class="table responsive"><thead><tr><th style="width:180px">Time</th><th>Status</th><th>Company</th></tr></thead><tbody>';
-    for(const h of HOURS){
-      const busy = !!busyAt[h];
-      const status = busy ? '<b class="no">Booked</b>' : '<b class="ok">Available</b>';
-      const company = busy ? `${busyAt[h].company} (${busyAt[h].tier})` : '';
+    for (const h of HOURS){
+      const slot = busyAt[h];
+      let status, company;
+      if(slot){
+        if(slot.status === 'disabled'){
+          status = '<b class="no">Unavailable</b>';
+          company = slot.note || '';
+        }else{
+          status = '<b class="no">Booked</b>';
+          const tier = slot.tier ? ` (${slot.tier})` : '';
+          company = `${slot.company}${tier}`;
+        }
+      }else{
+        status = '<b class="ok">Available</b>';
+        company = '';
+      }
       html += `<tr>
         <td data-label="Time">${fmt(h)} – ${fmt(h+1)}</td>
         <td data-label="Status">${status}</td>
@@ -66,7 +89,8 @@
     $('#grid').innerHTML = html;
 
     const ts = new Date().toLocaleTimeString();
-    const lu = $('#lastUpdated'); if(lu) lu.textContent = 'Updated: ' + ts;
+    const lu = $('#lastUpdated');
+    if (lu) lu.textContent = 'Updated: ' + ts;
   }
 
   async function refresh(){
@@ -74,13 +98,14 @@
       const r = await fetch(`/api/availability?date=${encodeURIComponent(DATE)}&room=${encodeURIComponent(ROOM)}`);
       if(!r.ok) throw new Error('api failed');
       const j = await r.json();
-      render(j.items||[]);
-    }catch(e){ render(ITEMS||[]); }
+      render(j.items || [], j.disabled || []);
+    }catch(e){
+      render(ITEMS || [], DISABLED || []);
+    }
   }
 
-  render(ITEMS||[]);
+  render(ITEMS || [], DISABLED || []);
   setInterval(refresh, 60000);
 </script>
 </body>
 </html>
-
