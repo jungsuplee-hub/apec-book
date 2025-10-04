@@ -38,7 +38,8 @@
   const EVENT_DATES = {{ event_dates|tojson|safe }};
   const ALL_ROOMS   = {{ all_room_codes|tojson|safe }};
   const ROOM_LABEL  = {{ room_label|tojson|safe }};
-  let chosenDate = EVENT_DATES[0];
+  const today = new Date().toISOString().slice(0,10);
+  let chosenDate = EVENT_DATES.find(d => today <= d) || EVENT_DATES[0];
 
   const dateRow = document.getElementById('dateButtons');
   const roomBlocks = document.getElementById('roomBlocks');
