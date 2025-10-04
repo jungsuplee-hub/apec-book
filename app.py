@@ -43,8 +43,6 @@ TIER_INDEX = {tier: idx for idx, tier in enumerate(TIER_ORDER)}
 
 COMPANY_MANAGED_TIERS = [tier for tier in TIER_ORDER if tier != "General"]
 
-OTHER_ROOM_CODE = "NM1"
-
 ROOMS_DATA = [
     {
         "code": "DM1",
@@ -210,12 +208,15 @@ ROOM_LABEL = {
     for code, details in ROOM_DETAILS.items()
 }
 
-ROOMS_BY_TIER: dict[str, list[str]] = {tier: [] for tier in ROOM_TIER_LABELS}
-for room in sorted(
+ROOMS_SORTED = sorted(
     ROOMS_DATA,
-    key=lambda r: (TIER_INDEX[r["tier"]], r["order"]),
-):
-    ROOMS_BY_TIER.setdefault(room["tier"], []).append(room["code"])
+    key=lambda r: (TIER_INDEX[r["tier"]], r["order"], r["code"]),
+)
+ALL_ROOM_CODES = [room["code"] for room in ROOMS_SORTED]
+ROOMS_BY_TIER: dict[str, list[str]] = {}
+for tier in ROOM_TIER_LABELS:
+    ROOMS_BY_TIER[tier] = list(ALL_ROOM_CODES)
+ROOMS_BY_TIER["Other"] = list(ALL_ROOM_CODES)
 
 app = FastAPI(title="APEC Meeting Rooms Booking")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -511,12 +512,11 @@ def booking_page(request: Request):
         dict(
             request=request,
             event_dates=EVENT_DATES,
-            rooms_by_tier=ROOMS_BY_TIER,
+            all_room_codes=ALL_ROOM_CODES,
             room_label=ROOM_LABEL,
             hours=HOURS,
             initial_date=initial_date,
             max_blocks=MAX_BLOCKS,
-            OTHER_ROOM_CODE=OTHER_ROOM_CODE,
         ),
     )
 
@@ -527,9 +527,8 @@ def launcher_page(request: Request):
         dict(
             request=request,
             event_dates=EVENT_DATES,
-            rooms_by_tier=ROOMS_BY_TIER,
             room_label=ROOM_LABEL,
-            tier_order=TIER_ORDER,
+            all_room_codes=ALL_ROOM_CODES,
         ),
     )
 
@@ -566,20 +565,11 @@ def redirect_to_booking() -> RedirectResponse:
 
 @app.get("/rooms", response_class=HTMLResponse)
 def rooms_overview(request: Request):
-    """Grouped overview of rooms by sponsor tier."""
-    sections = []
-    for tier in TIER_ORDER:
-        codes = ROOMS_BY_TIER.get(tier, [])
-        if not codes:
-            continue
-        sections.append(
-            dict(
-                tier=tier,
-                tier_label=ROOM_TIER_LABELS.get(tier, tier),
-                rooms=[ROOM_DETAILS[c] for c in codes],
-            )
-        )
-    return templates.TemplateResponse("rooms.html", dict(request=request, sections=sections))
+    """Overview of rooms without tier segmentation."""
+    return templates.TemplateResponse(
+        "rooms.html",
+        dict(request=request, rooms=ROOMS_SORTED),
+    )
 
 
 @app.get("/rooms/{room_code}", response_class=HTMLResponse)
@@ -588,7 +578,6 @@ def room_detail(request: Request, room_code: str):
         raise HTTPException(status_code=404, detail="Room not found")
     details = ROOM_DETAILS[room_code]
     schedule_date = request.query_params.get("date") or EVENT_DATES[0]
-    tier_label = ROOM_TIER_LABELS.get(details["tier"], details["tier"])
     return templates.TemplateResponse(
         "room_detail.html",
         dict(
@@ -596,7 +585,6 @@ def room_detail(request: Request, room_code: str):
             room_code=room_code,
             room_name=details["name"],
             details=details,
-            tier_label=tier_label,
             schedule_date=schedule_date,
         ),
     )
@@ -672,17 +660,12 @@ def create_booking(
         if not real_company:
             raise HTTPException(status_code=400, detail="Company name required for Other")
         tier = "General"
-        if room != OTHER_ROOM_CODE:
-            raise HTTPException(status_code=400, detail="Other must use designated general room")
         company_to_save = real_company
     else:
         db_tier = get_company_tier(company)
         if not db_tier:
             raise HTTPException(status_code=400, detail="Unknown company")
         tier = db_tier
-        # 티어-룸 매핑 검증
-        if room not in ROOMS_BY_TIER.get(tier, []):
-            raise HTTPException(status_code=400, detail="Room not allowed for company tier")
         company_to_save = company.strip()
 
     # --- 시간/블록 검증 ---

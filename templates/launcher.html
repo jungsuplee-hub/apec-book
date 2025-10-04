@@ -29,20 +29,19 @@
     <!-- 날짜 선택 버튼 -->
     <div class="row" id="dateButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
 
-    <!-- 티어별 룸 버튼 -->
-    <div id="tierBlocks" style="display:grid;gap:20px"></div>
+    <!-- 룸 버튼 -->
+    <div id="roomBlocks" style="display:grid;gap:20px"></div>
   </section>
 </main>
 
 <script>
   const EVENT_DATES = {{ event_dates|tojson|safe }};
-  const ROOMS_BY_TIER = {{ rooms_by_tier|tojson|safe }};
-  const ROOM_LABEL = {{ room_label|tojson|safe }};
-  const TIER_ORDER = {{ tier_order|tojson|safe }};
+  const ALL_ROOMS   = {{ all_room_codes|tojson|safe }};
+  const ROOM_LABEL  = {{ room_label|tojson|safe }};
   let chosenDate = EVENT_DATES[0];
 
   const dateRow = document.getElementById('dateButtons');
-  const tierBlocks = document.getElementById('tierBlocks');
+  const roomBlocks = document.getElementById('roomBlocks');
 
   function renderDates(){
     dateRow.innerHTML = EVENT_DATES.map(d => `
@@ -51,7 +50,7 @@
     dateRow.querySelectorAll('button').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         chosenDate = btn.dataset.date;
-        renderTiers();
+        renderRooms();
         dateRow.querySelectorAll('button').forEach(x=>x.classList.remove('chip-active'));
         btn.classList.add('chip-active');
       });
@@ -59,25 +58,21 @@
     dateRow.querySelector(`button[data-date="${chosenDate}"]`).classList.add('chip-active');
   }
 
-  function renderTiers(){
-    tierBlocks.innerHTML = TIER_ORDER.map(tier=>{
-      const rooms = ROOMS_BY_TIER[tier] || [];
-      const roomBtns = rooms.map(r=>{
-        const href = `/display?room=${encodeURIComponent(r)}&date=${encodeURIComponent(chosenDate)}`;
-        return `<a class="chip chip-gold" href="${href}">${ROOM_LABEL[r]||r}</a>`;
-      }).join('');
-      if(!rooms.length) return '';
-      return `
-        <div class="panel">
-          <div class="panel-title">${tier}</div>
-          <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">${roomBtns}</div>
-        </div>
-      `;
-    }).filter(Boolean).join('');
+  function renderRooms(){
+    const roomBtns = ALL_ROOMS.map(r=>{
+      const href = `/display?room=${encodeURIComponent(r)}&date=${encodeURIComponent(chosenDate)}`;
+      return `<a class="chip chip-gold" href="${href}">${ROOM_LABEL[r]||r}</a>`;
+    }).join('');
+    roomBlocks.innerHTML = `
+      <div class="panel">
+        <div class="panel-title">All rooms</div>
+        <div class="panel-body" style="display:flex;flex-wrap:wrap;gap:8px">${roomBtns}</div>
+      </div>
+    `;
   }
 
   renderDates();
-  renderTiers();
+  renderRooms();
 </script>
 </body>
 </html>
