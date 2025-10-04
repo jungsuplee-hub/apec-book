@@ -619,9 +619,29 @@ def display_page(request: Request, room: str, date: str):
         }
         for r in raw
     ]
+
+    disabled_raw = fetch_disabled_slots(date, room)
+    disabled_items = [
+        {
+            "room_code": r["room_code"],
+            "date": str(r["date"]),
+            "start_hour": int(r["start_hour"]),
+            "end_hour": int(r["end_hour"]),
+            "note": r.get("note") or "",
+        }
+        for r in disabled_raw
+    ]
     return templates.TemplateResponse(
         "display.html",
-        dict(request=request, room=room, room_name=ROOM_LABEL[room], date=date, hours=HOURS, items=items),
+        dict(
+            request=request,
+            room=room,
+            room_name=ROOM_LABEL[room],
+            date=date,
+            hours=HOURS,
+            items=items,
+            disabled=disabled_items,
+        ),
     )
 
 
