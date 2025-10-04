@@ -76,39 +76,74 @@ USE apec_booking;
 CREATE TABLE IF NOT EXISTS companies (
   id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(200) NOT NULL UNIQUE,
-  tier ENUM('Diamond','Platinum','Gold') NOT NULL,
+  tier ENUM(
+    'Diamond','Platinum','Gold','Legal Partner','Knowledge Partner',
+    'Media Partner - Premier','Media Partner - Platinum','Media Partner - Gold'
+  ) NOT NULL,
   INDEX idx_tier_name (tier, name)
 ) ENGINE=InnoDB;
 
 -- Seed companies (idempotent)
 INSERT IGNORE INTO companies(name, tier) VALUES
 -- Diamond
-('MEBO','Diamond'),
-('UPbit','Diamond'),
-('Korea Hydro & Nuclear Power Co., Ltd. (KHNP)','Diamond'),
-('SK hynix Inc.','Diamond'),
 ('Samsung','Diamond'),
-('Posco Holdings','Diamond'),
-('Hyundai Motor Group','Diamond'),
+('SK','Diamond'),
+('Hyundai','Diamond'),
+('LG','Diamond'),
+('Lotte','Diamond'),
+('Posco International','Diamond'),
 ('Hanwha','Diamond'),
+('HD Hyundai','Diamond'),
 ('GS','Diamond'),
+('Shinsegae Group','Diamond'),
+('Korea Hydro & Nuclear Power','Diamond'),
+('UPbit','Diamond'),
+('Hybe','Diamond'),
+('Mebo','Diamond'),
 
 -- Platinum
-('KB Kookmin Bank','Platinum'),
-('MegazoneCloud','Platinum'),
-('Woori Bank','Platinum'),
-('LS Corp.','Platinum'),
-('Wuliangye','Platinum'),
-('Citi','Platinum'),
-('Johnson & Johnson','Platinum'),
+('Korean Air Lines','Platinum'),
+('LS','Platinum'),
 ('Doosan','Platinum'),
+('KT','Platinum'),
+('Naver','Platinum'),
 ('Shinhan Bank','Platinum'),
-('NAVER Corporation','Platinum'),
-('TikTok','Platinum'),
+('Kookmin Bank','Platinum'),
+('Woori Bank','Platinum'),
+('Hana Bank','Platinum'),
+('CJ','Platinum'),
+('Korea zinc','Platinum'),
+('Megazone Cloud','Platinum'),
+('Kolon','Platinum'),
+('HS Hyosung','Platinum'),
+('Citi','Platinum'),
+('Meta','Platinum'),
+('AWS','Platinum'),
+('Johnsons&Johnson','Platinum'),
+('Coupang','Platinum'),
+('TicTok','Platinum'),
+('Wuliangye','Platinum'),
 
 -- Gold
+('AB InBev','Gold'),
+('Ananti','Gold'),
 ('Microsoft','Gold'),
-('Google Korea','Gold');
+('Google','Gold'),
+('LONGi','Gold'),
+('Vobile','Gold'),
+
+-- Partners
+('Kim & Chang','Legal Partner'),
+('Deloitte','Knowledge Partner'),
+('Bloomberg','Media Partner - Premier'),
+('Caixin','Media Partner - Premier'),
+('CGTN','Media Partner - Premier'),
+('CNBC','Media Partner - Premier'),
+('Economist Imapct','Media Partner - Platinum'),
+('Financial Times','Media Partner - Gold'),
+('Foreign Affairs','Media Partner - Gold'),
+('Time','Media Partner - Gold'),
+('The Wall Street Journal','Media Partner - Gold');
 SQL
 
 echo "[✓] companies table ensured and seed data inserted."
