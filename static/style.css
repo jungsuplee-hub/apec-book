@@ -54,7 +54,7 @@ a:hover{text-decoration:underline}
 .topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand-logo{display:inline-flex;align-items:center}
-.brand img{height:48px;width:auto}
+.brand img{height:96px;width:auto}
 .brand-caption{
   display:inline-flex;
   align-items:center;
