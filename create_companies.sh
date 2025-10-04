@@ -83,8 +83,11 @@ CREATE TABLE IF NOT EXISTS companies (
   INDEX idx_tier_name (tier, name)
 ) ENGINE=InnoDB;
 
--- Seed companies (idempotent)
-INSERT IGNORE INTO companies(name, tier) VALUES
+-- Reset and seed companies
+DELETE FROM companies;
+ALTER TABLE companies AUTO_INCREMENT = 1;
+
+INSERT INTO companies(name, tier) VALUES
 -- Diamond
 ('Samsung','Diamond'),
 ('SK','Diamond'),
