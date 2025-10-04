@@ -290,6 +290,54 @@ def fetch_disabled_slots(date_str: Optional[str] = None, room_code: Optional[str
     finally:
         conn.close()
 
+def ensure_rooms_schema(cur) -> bool:
+    """Ensure the ``rooms.tier`` column can store every configured tier.
+
+    Returns ``True`` when the schema is modified so the caller can decide
+    whether a commit is required.
+    """
+
+    cur.execute("SHOW TABLES LIKE 'rooms'")
+    if cur.fetchone() is None:
+        return False
+
+    cur.execute("SHOW COLUMNS FROM rooms LIKE 'tier'")
+    column = cur.fetchone()
+    if not column:
+        return False
+
+    column_type = column[1]
+    if not column_type:
+        return False
+
+    lowered_type = column_type.lower()
+    if not lowered_type.startswith("enum("):
+        # Already a VARCHAR or other compatible type.
+        return False
+
+    start = column_type.find("(")
+    end = column_type.rfind(")")
+    if start == -1 or end == -1 or start >= end:
+        return False
+
+    raw_values = column_type[start + 1 : end]
+    existing_values = {
+        value.strip().strip("'")
+        for value in raw_values.split(",")
+        if value.strip()
+    }
+    required_values = set(ROOM_TIER_LABELS.keys())
+    if required_values.issubset(existing_values):
+        return False
+
+    all_values = sorted(existing_values.union(required_values))
+    enum_values_sql = ",".join(f"'{value}'" for value in all_values)
+    cur.execute(
+        f"ALTER TABLE rooms MODIFY tier ENUM({enum_values_sql}) NOT NULL"
+    )
+    return True
+
+
 def ensure_rooms_seeded(conn=None):
     """Ensure the static room catalog exists in the database."""
 
@@ -299,10 +347,13 @@ def ensure_rooms_seeded(conn=None):
 
     try:
         cur = conn.cursor()
-        rows = [
-            (code, ROOM_LABEL[code], ROOM_DETAILS[code]["tier"])
-            for code in ROOM_LABEL
-        ]
+        schema_modified = ensure_rooms_schema(cur)
+        rows = []
+        for code in ROOM_LABEL:
+            tier = ROOM_DETAILS[code]["tier"]
+            if tier not in ROOM_TIER_LABELS:
+                tier = "Other"
+            rows.append((code, ROOM_LABEL[code], tier))
         cur.executemany(
             """
             INSERT INTO rooms (code, label, tier)
@@ -311,7 +362,7 @@ def ensure_rooms_seeded(conn=None):
             """,
             rows,
         )
-        if owns_connection:
+        if owns_connection or schema_modified:
             conn.commit()
     finally:
         if owns_connection:

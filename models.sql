@@ -8,7 +8,10 @@ CREATE TABLE IF NOT EXISTS rooms (
   id INT PRIMARY KEY AUTO_INCREMENT,
   code VARCHAR(64) NOT NULL UNIQUE,
   label VARCHAR(120) NOT NULL,
-  tier ENUM('Diamond','Platinum','Gold','Other') NOT NULL
+  tier ENUM(
+    'Diamond','Platinum','Gold','Legal Partner','Knowledge Partner',
+    'Media Partner - Premier','Media Partner - Platinum','Media Partner - Gold','Other'
+  ) NOT NULL
 ) ENGINE=InnoDB;
 
 -- Bookings
