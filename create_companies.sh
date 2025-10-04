@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS companies (
   INDEX idx_tier_name (tier, name)
 ) ENGINE=InnoDB;
 
+-- Ensure enum list matches seed data even if table already existed
+ALTER TABLE companies
+  MODIFY COLUMN tier ENUM(
+    'Diamond','Platinum','Gold','Legal Partner','Knowledge Partner',
+    'Media Partner - Premier','Media Partner - Platinum','Media Partner - Gold'
+  ) NOT NULL;
+
 -- Reset and seed companies
 DELETE FROM companies;
 ALTER TABLE companies AUTO_INCREMENT = 1;
