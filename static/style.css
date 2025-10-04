@@ -55,13 +55,21 @@ a:hover{text-decoration:underline}
 .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand-logo{display:inline-flex;align-items:center}
 .brand img{height:96px;width:auto}
-.brand-caption{
-  display:inline-flex;
+.page-banner{
+  display:flex;
   align-items:center;
+  justify-content:center;
+  min-height:50vh;
+  padding:40px 16px;
+  text-align:center;
+}
+
+.page-banner-title{
+  margin:0;
   font-family:'NotoSansCJKkr',ui-sans-serif,system-ui,Segoe UI,Roboto,Apple SD Gothic Neo,Malgun Gothic,Apple Color Emoji,Segoe UI Emoji;
   font-weight:900;
-  font-size:var(--fs-lg);
-  letter-spacing:0.14em;
+  font-size:clamp(32px,5vw,56px);
+  letter-spacing:0.18em;
   text-transform:uppercase;
 }
 .brand .title{display:flex;flex-direction:column;gap:2px;line-height:1.15}
