@@ -10,7 +10,6 @@
     .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px;align-items:center}
     .hero-visual{position:relative;border-radius:24px;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(160deg,rgba(16,28,48,0.95),rgba(12,20,36,0.95));padding:24px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
     .hero-visual img{width:160px;height:160px;object-fit:contain;filter:drop-shadow(0 16px 36px rgba(0,0,0,0.45));}
-    .hero-code{position:absolute;top:18px;right:18px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);background:rgba(9,17,32,0.85);font-weight:700;letter-spacing:0.08em}
     .hero-category{position:absolute;bottom:18px;left:18px;padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(9,17,32,0.75);font-size:var(--fs-xs,13px);letter-spacing:0.08em;text-transform:uppercase;color:#dbe6ff}
     .hero-details{display:flex;flex-direction:column;gap:14px}
     .hero-meta{display:grid;gap:10px;margin:0}
@@ -45,7 +44,6 @@
     <div class="hero">
       <div class="hero-visual">
         <img src="{{ details.image }}" alt="{{ room_name }}" loading="lazy" />
-        <span class="hero-code">{{ details.meeting_code }}</span>
         <span class="hero-category">{{ details.category }}</span>
       </div>
       <div class="hero-details">
