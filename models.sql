@@ -29,6 +29,21 @@ CREATE TABLE IF NOT EXISTS bookings (
   INDEX idx_email_date (email, date)
 ) ENGINE=InnoDB;
 
+-- Admin disabled slots
+CREATE TABLE IF NOT EXISTS disabled_slots (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  room_code VARCHAR(64) NOT NULL,
+  date DATE NOT NULL,
+  start_hour TINYINT NOT NULL,
+  end_hour TINYINT NOT NULL,
+  note VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_disabled_room FOREIGN KEY (room_code) REFERENCES rooms(code) ON DELETE RESTRICT ON UPDATE CASCADE,
+  INDEX idx_disabled_room_date (room_code, date),
+  INDEX idx_disabled_date (date),
+  CONSTRAINT uq_disabled UNIQUE (room_code, date, start_hour, end_hour)
+) ENGINE=InnoDB;
+
 -- Companies (신규)
 CREATE TABLE IF NOT EXISTS companies (
   id INT PRIMARY KEY AUTO_INCREMENT,
