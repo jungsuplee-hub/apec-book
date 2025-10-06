@@ -26,8 +26,7 @@ MYSQL_USER = os.getenv("MYSQL_USER", "apec")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
 
 # 이벤트/운영시간
-# NOTE: 2025-10-05는 디스플레이 하이라이트 테스트용 임시 날짜입니다.
-EVENT_DATES = ["2025-10-05", "2025-10-29", "2025-10-30", "2025-10-31"]
+EVENT_DATES = ["2025-10-29", "2025-10-30", "2025-10-31"]
 HOURS = list(range(9, 18))  # 09~18 보기(시작 슬롯은 9~17)
 MAX_BLOCKS = 2              # 1h/block, 최대 2블록 = 2시간
 
