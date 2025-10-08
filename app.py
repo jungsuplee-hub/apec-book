@@ -1,7 +1,12 @@
 import os
+import html
+import smtplib
 from datetime import datetime, timedelta, time
 from urllib.parse import quote, quote_plus
 from typing import List, Dict, Any, Tuple, Optional
+from collections import defaultdict
+
+from email.message import EmailMessage
 
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -25,6 +30,15 @@ MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
 MYSQL_DB = os.getenv("MYSQL_DB", "apec_booking")
 MYSQL_USER = os.getenv("MYSQL_USER", "apec")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
+
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "0")) if os.getenv("SMTP_PORT") else None
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_FROM = os.getenv("SMTP_FROM")
+
+SERVER_BASE_URL = os.getenv("SERVER_BASE_URL", "http://apecmeetingroom.com")
+EMAIL_DRY_RUN = os.getenv("EMAIL_DRY_RUN", "0") == "1"
 
 try:
     LOCAL_TIMEZONE = ZoneInfo(os.getenv("LOCAL_TZ", "Asia/Seoul"))
@@ -339,6 +353,24 @@ def fetch_bookings(date_str: str) -> List[Dict[str, Any]]:
         conn.close()
 
 
+def fetch_bookings_for_company(date_str: str, company: str) -> List[Dict[str, Any]]:
+    conn = get_db()
+    try:
+        cur = conn.cursor(DictCursor)
+        cur.execute(
+            """
+            SELECT company, email, tier, room_code, start_hour, end_hour, date
+            FROM bookings
+            WHERE date = %s AND company = %s
+            ORDER BY email, start_hour, room_code
+            """,
+            (date_str, company),
+        )
+        return list(cur.fetchall())
+    finally:
+        conn.close()
+
+
 def fetch_disabled_slots(date_str: Optional[str] = None, room_code: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = get_db()
     try:
@@ -362,6 +394,169 @@ def fetch_disabled_slots(date_str: Optional[str] = None, room_code: Optional[str
         return list(cur.fetchall())
     finally:
         conn.close()
+
+
+# -------------------------- Email helpers --------------------------
+def _format_hour_label(hour_value: int) -> str:
+    return f"{int(hour_value):02d}:00"
+
+
+def _build_email_bodies(company_name: str, items: List[Dict[str, Any]]) -> Tuple[str, str]:
+    lines: List[str] = []
+    html_lines: List[str] = []
+
+    lines.append(f"Dear {company_name},")
+    lines.append("")
+    lines.append("Warm greetings from the Secretariat of the APEC CEO Summit Korea 2025.")
+    lines.append("We are pleased to inform you that your meeting room reservation has been successfully received.")
+    lines.append("Please find the details of your booking below for your confirmation.")
+    lines.append("")
+    lines.append("Reservation Details:")
+
+    html_lines.append("<html><body>")
+    html_lines.append(f"<p>Dear {html.escape(company_name)},</p>")
+    html_lines.append("<p>Warm greetings from the Secretariat of the APEC CEO Summit Korea 2025.</p>")
+    html_lines.append(
+        "<p>We are pleased to inform you that your meeting room reservation has been successfully received.<br>"
+        "Please find the details of your booking below for your confirmation.</p>"
+    )
+    html_lines.append("<p><strong>Reservation Details:</strong></p>")
+
+    for idx, item in enumerate(items):
+        room_code = item["room_code"]
+        date_value = str(item["date"])
+        start_hour = int(item["start_hour"])
+        end_hour = int(item["end_hour"])
+        tier = item["tier"]
+        company_value = item["company"]
+        link = f"{SERVER_BASE_URL}/display?room={room_code}&date={date_value}"
+        room_name = ROOM_LABEL.get(room_code, room_code)
+
+        if idx > 0:
+            lines.append("")
+        lines.append(f"- Company : {company_value}")
+        lines.append(f"- Date : {date_value}")
+        lines.append(f"- Time : {_format_hour_label(start_hour)} - {_format_hour_label(end_hour)}")
+        lines.append(f"- Room : {tier} / {room_name}")
+        lines.append(f"- Check Schedule Link : {link}")
+
+        html_lines.append("<ul>")
+        html_lines.append(f"  <li><strong>Company:</strong> {html.escape(company_value)}</li>")
+        html_lines.append(f"  <li><strong>Date:</strong> {html.escape(date_value)}</li>")
+        html_lines.append(
+            f"  <li><strong>Time:</strong> {_format_hour_label(start_hour)} - {_format_hour_label(end_hour)}</li>"
+        )
+        html_lines.append(
+            f"  <li><strong>Room:</strong> {html.escape(tier)} / {html.escape(room_name)}</li>"
+        )
+        html_lines.append(
+            "  <li><strong>Check Schedule Link:</strong> "
+            f"<a href=\"{html.escape(link)}\">Check Schedule Link</a></li>"
+        )
+        html_lines.append("</ul>")
+
+    lines.append("")
+    lines.append("We kindly ask you to review the above information and ensure that all details are correct.")
+    lines.append("Should you require any assistance or additional arrangements, please do not hesitate to contact us.")
+    lines.append("")
+    lines.append("We look forward to supporting your successful participation at the APEC CEO Summit Korea 2025.")
+    lines.append("")
+    lines.append("Warm regards,")
+    lines.append("APEC CEO Summit Korea 2025 Secretariat")
+
+    html_lines.append(
+        "<p>We kindly ask you to review the above information and ensure that all details are correct.</p>"
+    )
+    html_lines.append(
+        "<p>Should you require any assistance or additional arrangements, please do not hesitate to contact us.</p>"
+    )
+    html_lines.append(
+        "<p>We look forward to supporting your successful participation at the APEC CEO Summit Korea 2025.</p>"
+    )
+    html_lines.append("<p>Warm regards,<br>APEC CEO Summit Korea 2025 Secretariat</p>")
+    html_lines.append("</body></html>")
+
+    return "\n".join(lines), "\n".join(html_lines)
+
+
+def _validate_smtp_settings() -> Dict[str, Any]:
+    required = {
+        "SMTP_HOST": SMTP_HOST,
+        "SMTP_PORT": SMTP_PORT,
+        "SMTP_USER": SMTP_USER,
+        "SMTP_PASSWORD": SMTP_PASSWORD,
+        "SMTP_FROM": SMTP_FROM,
+    }
+    missing = [name for name, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(
+            "Missing SMTP configuration: " + ", ".join(missing)
+        )
+    return {
+        "host": SMTP_HOST,
+        "port": SMTP_PORT,
+        "user": SMTP_USER,
+        "password": SMTP_PASSWORD,
+        "from": SMTP_FROM,
+    }
+
+
+def send_company_confirmation(date_str: str, company: str, *, dry_run: bool = False) -> Tuple[int, int]:
+    if date_str not in EVENT_DATES:
+        raise ValueError("Invalid date selected")
+
+    rows = fetch_bookings_for_company(date_str, company)
+    if not rows:
+        raise ValueError(f"No bookings found for {company} on {date_str}.")
+
+    grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        email = (row.get("email") or "").strip()
+        if not email:
+            continue
+        grouped[email].append(row)
+
+    grouped = {email: sorted(items, key=lambda r: (int(r["start_hour"]), r["room_code"])) for email, items in grouped.items()}
+
+    if not grouped:
+        raise ValueError(f"No email address on file for {company}.")
+
+    smtp_settings = _validate_smtp_settings()
+
+    total_bookings = sum(len(items) for items in grouped.values())
+    if dry_run:
+        return len(grouped), total_bookings
+
+    messages: List[EmailMessage] = []
+    for recipient, items in grouped.items():
+        text_body, html_body = _build_email_bodies(company, items)
+        msg = EmailMessage()
+        msg["Subject"] = "[APEC CEO Summit Korea 2025] Meeting Room Reservation Confirmation"
+        msg["From"] = smtp_settings["from"]
+        msg["To"] = recipient
+        msg.set_content(text_body)
+        msg.add_alternative(html_body, subtype="html")
+        messages.append(msg)
+
+    if smtp_settings["port"] == 465:
+        with smtplib.SMTP_SSL(smtp_settings["host"], smtp_settings["port"], timeout=20) as server:
+            server.login(smtp_settings["user"], smtp_settings["password"])
+            for message in messages:
+                server.send_message(message)
+    else:
+        with smtplib.SMTP(smtp_settings["host"], smtp_settings["port"], timeout=20) as server:
+            server.ehlo()
+            try:
+                server.starttls()
+                server.ehlo()
+            except smtplib.SMTPException:
+                pass
+            if smtp_settings["user"]:
+                server.login(smtp_settings["user"], smtp_settings["password"])
+            for message in messages:
+                server.send_message(message)
+
+    return len(grouped), total_bookings
 
 
 def fetch_booking_windows_map() -> Dict[str, Dict[str, datetime]]:
@@ -825,6 +1020,8 @@ def admin_page(
     request: Request,
     date: str | None = None,
     room: str | None = None,
+    email_msg: str | None = None,
+    email_error: str | None = None,
     company_msg: str | None = None,
     company_error: str | None = None,
     disable_msg: str | None = None,
@@ -845,6 +1042,22 @@ def admin_page(
     for item in companies:
         tier = item["tier"]
         company_groups.setdefault(tier, []).append(item)
+
+    email_targets_map: Dict[str, set[str]] = {}
+    for booking in all_items:
+        email_value = (booking.get("email") or "").strip()
+        if not email_value:
+            continue
+        company_value = booking["company"]
+        email_targets_map.setdefault(company_value, set()).add(email_value)
+
+    email_targets = [
+        {
+            "name": name,
+            "emails": sorted(values),
+        }
+        for name, values in sorted(email_targets_map.items(), key=lambda item: item[0].lower())
+    ]
 
     custom_windows = fetch_booking_windows_map()
     window_rows = []
@@ -911,6 +1124,9 @@ def admin_page(
             room_label=ROOM_LABEL,
             hours=HOURS,
             max_blocks=MAX_BLOCKS,
+            send_email_targets=email_targets,
+            email_msg=email_msg,
+            email_error=email_error,
             company_groups=company_groups,
             company_tiers=COMPANY_MANAGED_TIERS,
             company_msg=company_msg,
@@ -926,6 +1142,46 @@ def admin_page(
     )
 
 # ------------------------ actions / APIs ------------------------
+
+
+@app.post("/admin/send-email")
+def admin_send_email(
+    date: str = Form(...),
+    company: str = Form(...),
+    room: str | None = Form(None),
+):
+    redirect_params: List[Tuple[str, str]] = []
+    if date:
+        redirect_params.append(("date", date))
+    if room:
+        redirect_params.append(("room", room))
+
+    try:
+        recipients, total = send_company_confirmation(date, company, dry_run=EMAIL_DRY_RUN)
+        if EMAIL_DRY_RUN:
+            message = (
+                f"[DRY RUN] Prepared email for {company} on {date} "
+                f"({total} booking(s), {recipients} recipient(s))."
+            )
+        else:
+            message = (
+                f"Sent {total} booking(s) to {recipients} recipient(s) "
+                f"for {company} on {date}."
+            )
+        redirect_params.append(("email_msg", message))
+    except (ValueError, RuntimeError) as exc:
+        redirect_params.append(("email_error", str(exc)))
+    except Exception as exc:  # pragma: no cover - defensive guard
+        redirect_params.append(("email_error", f"Failed to send email: {exc}"))
+
+    if not redirect_params:
+        redirect_params.append(("date", date))
+
+    qs = "&".join(f"{key}={quote_plus(str(value))}" for key, value in redirect_params if value)
+    url = f"/admin?{qs}" if qs else "/admin"
+    return RedirectResponse(url=url, status_code=303)
+
+
 @app.post("/book")
 def create_booking(
     company: str = Form(...),          # select 값 ('Other' 포함)
