@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from urllib.parse import quote, quote_plus
 from typing import List, Dict, Any, Tuple, Optional
 
@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import MySQLdb
 from MySQLdb import IntegrityError
 from MySQLdb.cursors import DictCursor
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 load_dotenv()
 
@@ -24,6 +25,15 @@ MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
 MYSQL_DB = os.getenv("MYSQL_DB", "apec_booking")
 MYSQL_USER = os.getenv("MYSQL_USER", "apec")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
+
+try:
+    LOCAL_TIMEZONE = ZoneInfo(os.getenv("LOCAL_TZ", "Asia/Seoul"))
+except ZoneInfoNotFoundError:
+    LOCAL_TIMEZONE = ZoneInfo("UTC")
+
+TIMEZONE_LABEL = getattr(LOCAL_TIMEZONE, "key", str(LOCAL_TIMEZONE))
+DEFAULT_WINDOW_START_TIME = time(21, 0)
+DEFAULT_WINDOW_END_TIME = time(5, 0)
 
 # 이벤트/운영시간
 EVENT_DATES = ["2025-10-29", "2025-10-30", "2025-10-31"]
@@ -47,6 +57,57 @@ TIER_ORDER = list(ROOM_TIER_LABELS)
 TIER_INDEX = {tier: idx for idx, tier in enumerate(TIER_ORDER)}
 
 COMPANY_MANAGED_TIERS = [tier for tier in TIER_ORDER if tier != "Other"]
+
+
+def default_booking_window(date_str: str) -> tuple[datetime, datetime]:
+    """Return the default booking window for ``date_str`` in the local timezone."""
+
+    event_date = datetime.fromisoformat(date_str).date()
+    start_date = event_date - timedelta(days=1)
+    start = datetime.combine(start_date, DEFAULT_WINDOW_START_TIME, tzinfo=LOCAL_TIMEZONE)
+    end = datetime.combine(event_date, DEFAULT_WINDOW_END_TIME, tzinfo=LOCAL_TIMEZONE)
+    return start, end
+
+
+def ensure_local_timezone(dt: datetime) -> datetime:
+    """Attach the local timezone to ``dt`` if it is naive."""
+
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=LOCAL_TIMEZONE)
+    return dt.astimezone(LOCAL_TIMEZONE)
+
+
+def to_local_naive(dt: datetime) -> datetime:
+    """Convert ``dt`` to a naive datetime in the local timezone for DB storage."""
+
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(LOCAL_TIMEZONE).replace(tzinfo=None)
+
+
+def format_window_label(dt: datetime) -> str:
+    """Human readable label for displaying booking window datetimes."""
+
+    localized = ensure_local_timezone(dt)
+    return f"{localized.strftime('%Y-%m-%d %H:%M')} ({TIMEZONE_LABEL})"
+
+
+def split_date_hour(dt: datetime) -> tuple[str, int]:
+    localized = ensure_local_timezone(dt)
+    return localized.date().isoformat(), localized.hour
+
+
+def combine_date_hour(date_str: str, hour_value: int) -> datetime:
+    if hour_value < 0 or hour_value > 24:
+        raise ValueError("Hour must be between 0 and 24")
+    try:
+        base_date = datetime.fromisoformat(date_str).date()
+    except ValueError as exc:
+        raise ValueError("Invalid date format") from exc
+    if hour_value == 24:
+        base_date += timedelta(days=1)
+        hour_value = 0
+    return datetime.combine(base_date, time(hour_value, 0), tzinfo=LOCAL_TIMEZONE)
 
 
 def get_default_event_date(today: Optional[str] = None) -> str:
@@ -301,6 +362,95 @@ def fetch_disabled_slots(date_str: Optional[str] = None, room_code: Optional[str
         return list(cur.fetchall())
     finally:
         conn.close()
+
+
+def fetch_booking_windows_map() -> Dict[str, Dict[str, datetime]]:
+    conn = get_db()
+    try:
+        cur = conn.cursor(DictCursor)
+        cur.execute(
+            "SELECT date, start_at, end_at FROM booking_windows ORDER BY date"
+        )
+        items: Dict[str, Dict[str, datetime]] = {}
+        for row in cur.fetchall():
+            date_key = row["date"].isoformat()
+            items[date_key] = {
+                "start": ensure_local_timezone(row["start_at"]),
+                "end": ensure_local_timezone(row["end_at"]),
+            }
+        return items
+    finally:
+        conn.close()
+
+
+def fetch_booking_window(date_str: str) -> Optional[Dict[str, datetime]]:
+    conn = get_db()
+    try:
+        cur = conn.cursor(DictCursor)
+        cur.execute(
+            "SELECT start_at, end_at FROM booking_windows WHERE date=%s",
+            (date_str,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "start": ensure_local_timezone(row["start_at"]),
+            "end": ensure_local_timezone(row["end_at"]),
+        }
+    finally:
+        conn.close()
+
+
+def upsert_booking_window(date_str: str, start_dt: datetime, end_dt: datetime) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO booking_windows (date, start_at, end_at)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE start_at=VALUES(start_at), end_at=VALUES(end_at)
+            """,
+            (date_str, to_local_naive(start_dt), to_local_naive(end_dt)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_booking_window(date_str: str) -> None:
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM booking_windows WHERE date=%s", (date_str,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_effective_booking_window(date_str: str) -> Dict[str, Any]:
+    custom = fetch_booking_window(date_str)
+    if custom:
+        return {"start": custom["start"], "end": custom["end"], "source": "custom"}
+    start, end = default_booking_window(date_str)
+    return {"start": start, "end": end, "source": "default"}
+
+
+def booking_window_status(date_str: str, now: Optional[datetime] = None) -> Dict[str, Any]:
+    window = get_effective_booking_window(date_str)
+    current = ensure_local_timezone(now or datetime.now(LOCAL_TIMEZONE))
+    is_open = window["start"] <= current < window["end"]
+    return {
+        "date": date_str,
+        "start": window["start"],
+        "end": window["end"],
+        "source": window["source"],
+        "is_open": is_open,
+        "now": current,
+        "custom": window["source"] == "custom",
+    }
+
 
 def ensure_rooms_schema(cur) -> bool:
     """Ensure the ``rooms.tier`` column can store every configured tier.
@@ -679,6 +829,8 @@ def admin_page(
     company_error: str | None = None,
     disable_msg: str | None = None,
     disable_error: str | None = None,
+    window_msg: str | None = None,
+    window_error: str | None = None,
 ):
     date_val = date or get_default_event_date()
     all_items = fetch_bookings(date_val)
@@ -693,6 +845,60 @@ def admin_page(
     for item in companies:
         tier = item["tier"]
         company_groups.setdefault(tier, []).append(item)
+
+    custom_windows = fetch_booking_windows_map()
+    window_rows = []
+    window_presets: Dict[str, Dict[str, Any]] = {}
+    for event_date in EVENT_DATES:
+        default_start, default_end = default_booking_window(event_date)
+        effective = get_effective_booking_window(event_date)
+        window_rows.append(
+            {
+                "date": event_date,
+                "start": format_window_label(effective["start"]),
+                "end": format_window_label(effective["end"]),
+                "source": "Custom" if effective["source"] == "custom" else "Default",
+            }
+        )
+
+        custom_entry = custom_windows.get(event_date)
+        form_source = custom_entry or {"start": default_start, "end": default_end}
+        start_date_val, start_hour_val = split_date_hour(form_source["start"])
+        end_date_val, end_hour_val = split_date_hour(form_source["end"])
+        window_presets[event_date] = {
+            "default": {
+                "start": default_start.isoformat(),
+                "end": default_end.isoformat(),
+            },
+            "effective": {
+                "start": effective["start"].isoformat(),
+                "end": effective["end"].isoformat(),
+                "source": effective["source"],
+            },
+            "custom": (
+                {
+                    "start": custom_entry["start"].isoformat(),
+                    "end": custom_entry["end"].isoformat(),
+                }
+                if custom_entry
+                else None
+            ),
+            "form": {
+                "start_date": start_date_val,
+                "start_hour": start_hour_val,
+                "end_date": end_date_val,
+                "end_hour": end_hour_val,
+            },
+            "labels": {
+                "default": f"{format_window_label(default_start)} – {format_window_label(default_end)}",
+                "effective": f"{format_window_label(effective['start'])} – {format_window_label(effective['end'])}",
+                "custom": (
+                    f"{format_window_label(custom_entry['start'])} – {format_window_label(custom_entry['end'])}"
+                    if custom_entry
+                    else None
+                ),
+            },
+        }
     return templates.TemplateResponse(
         "admin.html",
         dict(
@@ -711,6 +917,11 @@ def admin_page(
             company_error=company_error,
             disable_msg=disable_msg,
             disable_error=disable_error,
+            window_msg=window_msg,
+            window_error=window_error,
+            window_rows=window_rows,
+            booking_window_presets=window_presets,
+            timezone_label=TIMEZONE_LABEL,
         ),
     )
 
@@ -733,6 +944,14 @@ def create_booking(
         raise HTTPException(status_code=400, detail="Invalid date")
     if room not in ROOM_LABEL:
         raise HTTPException(status_code=400, detail="Invalid room")
+
+    window_info = booking_window_status(date)
+    if not window_info["is_open"]:
+        message = (
+            "Booking is closed for this date."
+            f" Allowed time: {format_window_label(window_info['start'])} – {format_window_label(window_info['end'])}."
+        )
+        raise HTTPException(status_code=403, detail=message)
 
     # --- 회사/티어 확정 ---
     if company == "Other":
@@ -814,6 +1033,102 @@ def api_daily_check(date: str, company: str):
         return {"ok": False, "reason": "invalid date"}
     total = get_company_daily_total(date, company)
     return {"ok": True, "total": total, "limit": MAX_BLOCKS}
+
+
+@app.get("/api/booking_window")
+def api_booking_window(date: str):
+    if date not in EVENT_DATES:
+        return JSONResponse({"error": "invalid date"}, status_code=400)
+
+    status = booking_window_status(date)
+    default_start, default_end = default_booking_window(date)
+    return {
+        "date": date,
+        "start": status["start"].isoformat(),
+        "end": status["end"].isoformat(),
+        "start_display": format_window_label(status["start"]),
+        "end_display": format_window_label(status["end"]),
+        "is_open": status["is_open"],
+        "now": status["now"].isoformat(),
+        "source": status["source"],
+        "custom": status["custom"],
+        "timezone": TIMEZONE_LABEL,
+        "default_start": default_start.isoformat(),
+        "default_end": default_end.isoformat(),
+        "default_start_display": format_window_label(default_start),
+        "default_end_display": format_window_label(default_end),
+    }
+
+
+# ----------------- Admin: Booking window settings -----------------
+@app.post("/admin/booking-window")
+def admin_booking_window_update(
+    target_date: str = Form(...),
+    start_date: str = Form(...),
+    start_hour: int = Form(...),
+    end_date: str = Form(...),
+    end_hour: int = Form(...),
+    room: str | None = Form(None),
+):
+    redirect_params: List[Tuple[str, str]] = []
+    if target_date:
+        redirect_params.append(("date", target_date))
+    if room:
+        redirect_params.append(("room", room))
+
+    try:
+        if target_date not in EVENT_DATES:
+            raise ValueError("Invalid event date selected")
+        start_val = int(start_hour)
+        end_val = int(end_hour)
+        start_dt = combine_date_hour(start_date, start_val)
+        end_dt = combine_date_hour(end_date, end_val)
+        if end_dt <= start_dt:
+            raise ValueError("End time must be later than start time")
+        upsert_booking_window(target_date, start_dt, end_dt)
+    except ValueError as exc:
+        redirect_params.append(("window_error", str(exc)))
+    except Exception:
+        redirect_params.append(("window_error", "Failed to update booking window"))
+    else:
+        label = f"{format_window_label(start_dt)} – {format_window_label(end_dt)}"
+        redirect_params.append(("window_msg", f"Updated booking window for {target_date}: {label}"))
+
+    qs = ""
+    if redirect_params:
+        qs = "?" + "&".join(f"{key}={quote_plus(value)}" for key, value in redirect_params)
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
+
+@app.post("/admin/booking-window/reset")
+def admin_booking_window_reset(
+    target_date: str = Form(...),
+    room: str | None = Form(None),
+):
+    redirect_params: List[Tuple[str, str]] = []
+    if target_date:
+        redirect_params.append(("date", target_date))
+    if room:
+        redirect_params.append(("room", room))
+
+    try:
+        if target_date not in EVENT_DATES:
+            raise ValueError("Invalid event date selected")
+        delete_booking_window(target_date)
+    except ValueError as exc:
+        redirect_params.append(("window_error", str(exc)))
+    except Exception:
+        redirect_params.append(("window_error", "Failed to reset booking window"))
+    else:
+        start_default, end_default = default_booking_window(target_date)
+        label = f"{format_window_label(start_default)} – {format_window_label(end_default)}"
+        redirect_params.append(("window_msg", f"Reverted booking window for {target_date} to default: {label}"))
+
+    qs = ""
+    if redirect_params:
+        qs = "?" + "&".join(f"{key}={quote_plus(value)}" for key, value in redirect_params)
+    return RedirectResponse(url=f"/admin{qs}", status_code=303)
+
 
 # -------------------- Admin: Disabled slots --------------------
 @app.post("/admin/disabled/add")

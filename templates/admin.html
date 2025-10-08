@@ -115,6 +115,79 @@
   </section>
 
   <section class="card">
+    <h2 class="title">Booking Window Settings</h2>
+
+    {% if window_error %}
+      <div class="alert error">{{ window_error }}</div>
+    {% elif window_msg %}
+      <div class="alert success">{{ window_msg }}</div>
+    {% endif %}
+
+    <form class="toolbar" method="post" action="/admin/booking-window" id="windowForm">
+      <label class="field">
+        <span>Event Date</span>
+        <select name="target_date" id="window-date" required>
+          {% for d in event_dates %}
+            <option value="{{ d }}" {% if d == date %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>From (Date)</span>
+        <input type="date" name="start_date" id="window-start-date" required />
+      </label>
+      <label class="field">
+        <span>From (Time)</span>
+        <select name="start_hour" id="window-start-hour" required>
+          {% for h in range(0, 24) %}
+            <option value="{{ h }}">{{ "%02d:00" % h }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>To (Date)</span>
+        <input type="date" name="end_date" id="window-end-date" required />
+      </label>
+      <label class="field">
+        <span>To (Time)</span>
+        <select name="end_hour" id="window-end-hour" required>
+          {% for h in range(0, 25) %}
+            <option value="{{ h }}">{{ "24:00" if h == 24 else "%02d:00" % h }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% if room %}<input type="hidden" name="room" value="{{ room }}" />{% endif %}
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <button type="submit" class="button">Save Window</button>
+        <button type="submit" class="button" formaction="/admin/booking-window/reset">Reset to Default</button>
+      </div>
+    </form>
+
+    <div class="muted" id="windowSummary" style="margin-top:-4px;margin-bottom:12px"></div>
+
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:140px">Event Date</th>
+            <th>Window</th>
+            <th style="width:120px">Mode</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in window_rows %}
+            <tr>
+              <td>{{ w.date }}</td>
+              <td>{{ w.start }} → {{ w.end }}</td>
+              <td>{{ w.source }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
     <h2 class="title">Manage Disabled Slots</h2>
 
     {% if disable_error %}
@@ -249,6 +322,41 @@
       </div>
     {% endfor %}
   </section>
+
+  <script>
+    const WINDOW_PRESETS = {{ booking_window_presets|tojson|safe }};
+    const TIMEZONE_LABEL = {{ timezone_label|tojson|safe }};
+    const windowDate = document.getElementById('window-date');
+    const windowStartDate = document.getElementById('window-start-date');
+    const windowStartHour = document.getElementById('window-start-hour');
+    const windowEndDate = document.getElementById('window-end-date');
+    const windowEndHour = document.getElementById('window-end-hour');
+    const windowSummary = document.getElementById('windowSummary');
+
+    function applyWindowPreset(date){
+      if(!WINDOW_PRESETS || !WINDOW_PRESETS[date]) return;
+      const info = WINDOW_PRESETS[date];
+      const form = info.form;
+      if(form){
+        windowStartDate.value = form.start_date;
+        windowStartHour.value = String(form.start_hour);
+        windowEndDate.value = form.end_date;
+        windowEndHour.value = String(form.end_hour);
+      }
+      const label = info.labels?.effective || '';
+      const mode = (info.effective?.source === 'custom') ? 'Custom' : 'Default';
+      windowSummary.textContent = label ? `Current window (${mode}, ${TIMEZONE_LABEL}): ${label}` : '';
+    }
+
+    if(windowDate){
+      windowDate.addEventListener('change', ()=>applyWindowPreset(windowDate.value));
+      const initial = windowDate.value || (windowDate.options[0]?.value ?? '');
+      if(initial){
+        windowDate.value = initial;
+        applyWindowPreset(initial);
+      }
+    }
+  </script>
 </main>
 <script>
   (function () {
