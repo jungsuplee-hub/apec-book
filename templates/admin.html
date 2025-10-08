@@ -24,6 +24,7 @@
     .company-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#101b2d}
     .company-name{font-weight:600}
     .company-actions{display:flex;gap:8px}
+    .section-subtitle{margin:12px 0 4px;font-size:var(--fs-md);font-weight:600}
   </style>
 </head>
 <body>
@@ -68,6 +69,40 @@
         <span class="pill">Filtered: {{ room_label[room] }}</span>
       {% endif %}
     </form>
+
+    <h3 class="section-subtitle">Send Confirmation Email</h3>
+    {% if email_error %}
+      <div class="alert error">{{ email_error }}</div>
+    {% elif email_msg %}
+      <div class="alert success">{{ email_msg }}</div>
+    {% endif %}
+
+    <form class="toolbar" method="post" action="/admin/send-email">
+      <label class="field">
+        <span>Date</span>
+        <select name="date" required>
+          {% for d in event_dates %}
+            <option value="{{ d }}" {% if d == date %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field" style="flex:1">
+        <span>Company</span>
+        <select name="company" required>
+          <option value="" disabled selected>Select company</option>
+          {% for target in send_email_targets %}
+            <option value="{{ target.name }}">{{ target.name }}{% if target.emails %} ({{ target.emails|join(', ') }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% if room %}<input type="hidden" name="room" value="{{ room }}" />{% endif %}
+      <button class="button" type="submit" style="align-self:flex-end">Send Email</button>
+    </form>
+    {% if not send_email_targets %}
+      <p class="muted" style="margin-top:-6px">No bookings with an email address for this date.</p>
+    {% else %}
+      <p class="muted" style="margin-top:-6px">Only companies with bookings and saved email addresses are listed.</p>
+    {% endif %}
 
     <div class="table-scroll">
       <table class="table">
