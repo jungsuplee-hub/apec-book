@@ -50,6 +50,15 @@ CREATE TABLE IF NOT EXISTS disabled_slots (
   CONSTRAINT uq_disabled UNIQUE (room_code, date, start_hour, end_hour)
 ) ENGINE=InnoDB;
 
+-- Custom booking windows per event date
+CREATE TABLE IF NOT EXISTS booking_windows (
+  date DATE PRIMARY KEY,
+  start_at DATETIME NOT NULL,
+  end_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Companies (신규)
 CREATE TABLE IF NOT EXISTS companies (
   id INT PRIMARY KEY AUTO_INCREMENT,

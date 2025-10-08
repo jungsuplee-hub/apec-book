@@ -106,6 +106,7 @@
       <div id="dailyWarn" class="flash" style="display:none; grid-column:1/-1"></div>
 
       <button class="button primary" type="submit" style="grid-column:1/-1">Reserve</button>
+      <div id="windowNotice" class="flash" style="display:none;grid-column:1/-1"></div>
       <div id="msg" class="muted" style="grid-column:1/-1"></div>
     </form>
   </section>
@@ -139,6 +140,15 @@
   const fmt = h => String(h).padStart(2,'0') + ':00';
 
   let desiredStartFromURL = null;
+  let windowAllowsBooking = true;
+  let dailyLimitAllowsBooking = true;
+
+  function updateSubmitState(){
+    const btn = document.querySelector('#bookingForm button[type="submit"]');
+    if(btn){
+      btn.disabled = !(windowAllowsBooking && dailyLimitAllowsBooking);
+    }
+  }
 
   // 달력
   function openCalendarPicker(){
@@ -155,6 +165,11 @@
   async function apiAvailability(date, room){
     const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}&room=${encodeURIComponent(room)}`);
     if(!res.ok) throw new Error('failed to load availability');
+    return await res.json();
+  }
+  async function apiBookingWindow(date){
+    const res = await fetch(`/api/booking_window?date=${encodeURIComponent(date)}`);
+    if(!res.ok) throw new Error('failed to load booking window');
     return await res.json();
   }
   async function apiDailyCheck(date, company){
@@ -323,36 +338,87 @@
     renderBoard(date, room, data, blocks);
   }
 
+  async function updateWindowStatus(){
+    const notice = $('#windowNotice');
+    if(!notice){
+      windowAllowsBooking = true;
+      updateSubmitState();
+      return;
+    }
+    const date = $('#date').value;
+    if(!date){
+      windowAllowsBooking = true;
+      notice.style.display = 'none';
+      notice.textContent = '';
+      updateSubmitState();
+      return;
+    }
+    try{
+      const info = await apiBookingWindow(date);
+      if(info && info.is_open){
+        windowAllowsBooking = true;
+        notice.style.display = 'none';
+        notice.textContent = '';
+      }else{
+        windowAllowsBooking = false;
+        const label = (info && info.start_display && info.end_display)
+          ? `${info.start_display} ~ ${info.end_display}`
+          : '';
+        if(label){
+          notice.textContent = `현재 선택한 날짜는 예약 접수 시간이 아닙니다. 예약 가능 시간은 ${label} 입니다. 안내된 시간 외에는 예약이 불가능하오니 관리자에게 문의해 주세요.`;
+        }else{
+          notice.textContent = '현재 예약을 접수할 수 없습니다. 관리자에게 문의해 주세요.';
+        }
+        notice.style.display = '';
+      }
+    }catch(_err){
+      windowAllowsBooking = false;
+      notice.textContent = '예약 가능 시간을 불러오지 못했습니다. 관리자에게 문의해 주세요.';
+      notice.style.display = '';
+    }
+    updateSubmitState();
+  }
+
   // 하루 2시간 제한 사전 안내/차단
   async function checkDailyLimit(){
     const comp = $('#company').value;
     const date = $('#date').value;
     const warn = $('#dailyWarn');
-    const btn  = document.querySelector('#bookingForm button[type="submit"]');
-    if(!comp || !date){ warn.style.display='none'; btn.disabled=false; return; }
+    if(!comp || !date){
+      warn.style.display='none';
+      dailyLimitAllowsBooking = true;
+      updateSubmitState();
+      return;
+    }
 
     try{
       const j = await apiDailyCheck(date, comp);
-      if(!j || !j.ok){ warn.style.display='none'; btn.disabled=false; return; }
+      if(!j || !j.ok){
+        warn.style.display='none';
+        dailyLimitAllowsBooking = true;
+        updateSubmitState();
+        return;
+      }
       const limit = j.limit ?? 2;
       const already = j.total ?? 0;
       const want = parseInt($('#blocks').value,10)||1;
       if (already >= limit){
         warn.textContent = `Daily limit: ${comp} already has ${already}h booked on ${date}. Max ${limit}h/day.`;
         warn.style.display = '';
-        btn.disabled = true;
+        dailyLimitAllowsBooking = false;
       } else if (already + want > limit){
         warn.textContent = `Daily limit: ${comp} has ${already}h on ${date}. You can add only ${limit - already}h more.`;
         warn.style.display = '';
-        btn.disabled = true;
+        dailyLimitAllowsBooking = false;
       } else {
         warn.style.display = 'none';
-        btn.disabled = false;
+        dailyLimitAllowsBooking = true;
       }
     }catch(e){
       warn.style.display = 'none';
-      btn.disabled = false;
+      dailyLimitAllowsBooking = true;
     }
+    updateSubmitState();
   }
 
   // 기본값
@@ -380,7 +446,11 @@
       if(isOtherSelected()) $('#company_other').focus();
       await checkDailyLimit();
       await refreshAll();
-    }else if(['date','blocks'].includes(e.target.id)){
+    }else if(e.target.id==='date'){
+      await updateWindowStatus();
+      await checkDailyLimit();
+      await refreshAll();
+    }else if(e.target.id==='blocks'){
       await checkDailyLimit();
       await refreshAll();
     }else if(e.target.id==='room'){
@@ -390,9 +460,15 @@
 
   $('#bookingForm').addEventListener('submit', async (ev)=>{
     // 마지막 방어선: 프런트 체크
+    await updateWindowStatus();
     await checkDailyLimit();
     const warn = $('#dailyWarn');
-    if (warn.style.display !== 'none'){
+    if (!windowAllowsBooking){
+      ev.preventDefault();
+      $('#msg').textContent = '현재 예약 가능 시간이 아닙니다. 관리자에게 문의해 주세요.';
+      return false;
+    }
+    if (warn.style.display !== 'none' || !dailyLimitAllowsBooking){
       ev.preventDefault();
       return false;
     }
@@ -403,9 +479,11 @@
     await loadCompanies();
     initFromURL();
     applyTierFromCompany();
+    await updateWindowStatus();
     await checkDailyLimit();
     refreshAll().catch(()=>{});
     setInterval(refreshAll,60000);
+    setInterval(updateWindowStatus,60000);
   }
   init();
 </script>
