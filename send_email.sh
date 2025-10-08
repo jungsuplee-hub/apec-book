@@ -183,7 +183,11 @@ def build_body(recipient, items):
         lines.append(f"- Company : {it['company']}")
         lines.append(f"- Date : {date}")
         lines.append(f"- Time : {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
-        lines.append(f"- Room : {it['tier']} / {room} - OUTDOOR F&B ZONE_OFFICE BUS")
+        if room == "GM3":
+            room_display = "OUTDOOR F&B ZONE_OFFICE BUS"
+        else:
+            room_display = f"{room} - OUTDOOR F&B ZONE_OFFICE BUS"
+        lines.append(f"- Room : {it['tier']} / {room_display}")
         lines.append(f"- Check Schedule : {link}")
 
     lines.append("")
