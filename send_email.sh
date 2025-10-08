@@ -162,6 +162,22 @@ def fmt_time(h): return f"{h:02d}:00"
 
 SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://apecmeetingroom.com")
 
+ROOM_LABELS = {
+    "DM1": "Meeting Room 1",
+    "DM2": "Meeting Room 2",
+    "DM3": "Meeting Room 3",
+    "DM4": "Meeting Room 4",
+    "PM1": "Meeting Room 5",
+    "PM2": "Meeting Room 6",
+    "PM3": "Meeting Room 7",
+    "PM4": "Meeting Room 8",
+    "GM1": "Meeting Room 9",
+    "GM2": "Outdoor Meeting Room 1 (Hyundai Office Bus)",
+    "GM3": "Outdoor Meeting Room 2 (Hyundai Office Bus)",
+    "NM1": "Media Interview Room",
+}
+
+
 def build_body(recipient, items):
     lines = []
     company_name = items[0]["company"] if items else ""
@@ -183,11 +199,8 @@ def build_body(recipient, items):
         lines.append(f"- Company : {it['company']}")
         lines.append(f"- Date : {date}")
         lines.append(f"- Time : {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
-        if room == "GM3":
-            room_display = "OUTDOOR F&B ZONE_OFFICE BUS"
-        else:
-            room_display = f"{room} - OUTDOOR F&B ZONE_OFFICE BUS"
-        lines.append(f"- Room : {it['tier']} / {room_display}")
+        room_name = ROOM_LABELS.get(room, room)
+        lines.append(f"- Room : {it['tier']} / {room_name}")
         lines.append(f"- Check Schedule : {link}")
 
     lines.append("")
