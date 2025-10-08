@@ -95,6 +95,7 @@ SMTP_HOST="$SMTP_HOST" SMTP_PORT="$SMTP_PORT" SMTP_USER="$SMTP_USER" SMTP_PASSWO
 SMTP_FROM="$SMTP_FROM" TARGET_DATE="$DATE" DRY_RUN="$DRY_RUN" \
 python3 - <<'PY'
 import os, sys
+import html
 import smtplib
 from email.message import EmailMessage
 from collections import defaultdict
@@ -180,6 +181,7 @@ ROOM_LABELS = {
 
 def build_body(recipient, items):
     lines = []
+    html_lines = []
     company_name = items[0]["company"] if items else ""
 
     lines.append(f"Dear {company_name},")
@@ -189,6 +191,13 @@ def build_body(recipient, items):
     lines.append("Please find the details of your booking below for your confirmation.")
     lines.append("")
     lines.append("Reservation Details:")
+
+    html_lines.append("<html><body>")
+    html_lines.append(f"<p>Dear {html.escape(company_name)},</p>")
+    html_lines.append("<p>Warm greetings from the Secretariat of the APEC CEO Summit Korea 2025.</p>")
+    html_lines.append("<p>We are pleased to inform you that your meeting room reservation has been successfully received.<br>"
+                      "Please find the details of your booking below for your confirmation.</p>")
+    html_lines.append("<p><strong>Reservation Details:</strong></p>")
 
     for idx, it in enumerate(items):
         room = it["room"]
@@ -201,7 +210,20 @@ def build_body(recipient, items):
         lines.append(f"- Time : {fmt_time(it['sh'])} - {fmt_time(it['eh'])}")
         room_name = ROOM_LABELS.get(room, room)
         lines.append(f"- Room : {it['tier']} / {room_name}")
-        lines.append(f"- Check Schedule : {link}")
+        lines.append(f"- Check Schedule Link : {link}")
+
+        html_lines.append("<ul>")
+        html_lines.append(f"  <li><strong>Company:</strong> {html.escape(it['company'])}</li>")
+        html_lines.append(f"  <li><strong>Date:</strong> {html.escape(date)}</li>")
+        html_lines.append(f"  <li><strong>Time:</strong> {fmt_time(it['sh'])} - {fmt_time(it['eh'])}</li>")
+        html_lines.append(
+            f"  <li><strong>Room:</strong> {html.escape(it['tier'])} / {html.escape(room_name)}</li>"
+        )
+        html_lines.append(
+            f"  <li><strong>Check Schedule Link:</strong> "
+            f"<a href=\"{html.escape(link)}\">Check Schedule Link</a></li>"
+        )
+        html_lines.append("</ul>")
 
     lines.append("")
     lines.append("We kindly ask you to review the above information and ensure that all details are correct.")
@@ -212,18 +234,25 @@ def build_body(recipient, items):
     lines.append("Warm regards,")
     lines.append("APEC CEO Summit Korea 2025 Secretariat")
 
-    return "\n".join(lines)
+    html_lines.append("<p>We kindly ask you to review the above information and ensure that all details are correct.</p>")
+    html_lines.append("<p>Should you require any assistance or additional arrangements, please do not hesitate to contact us.</p>")
+    html_lines.append("<p>We look forward to supporting your successful participation at the APEC CEO Summit Korea 2025.</p>")
+    html_lines.append("<p>Warm regards,<br>APEC CEO Summit Korea 2025 Secretariat</p>")
+    html_lines.append("</body></html>")
+
+    return "\n".join(lines), "\n".join(html_lines)
 
 
 def send_one(to_addr, items):
     subject = "[APEC CEO Summit Korea 2025] Meeting Room Reservation Confirmation"
-    body = build_body(to_addr, items)
+    text_body, html_body = build_body(to_addr, items)
 
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"]    = SMTP_FROM
     msg["To"]      = to_addr
-    msg.set_content(body)
+    msg.set_content(text_body)
+    msg.add_alternative(html_body, subtype="html")
 
     if DRY_RUN == "1":
         print("----- DRY RUN -----")
