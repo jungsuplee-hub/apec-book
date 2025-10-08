@@ -436,7 +436,11 @@ Please contact the administrator if you need assistance outside the stated hours
     }
     const comp = p.get('company');
     if (comp){ $('#company').value = comp; if (comp === 'Other'){ $('#companyOtherField').classList.remove('hidden'); $('#company_other').value = p.get('company_other') || ''; } }
+    const email = p.get('email');
+    if (email){ $('#email').value = email; }
     $('#date').value = p.get('date') || defaultDate();
+    const room = p.get('room');
+    if (room){ $('#room').value = room; }
     const b = parseInt(p.get('blocks')||'1',10); $('#blocks').value = (b===2?'2':'1');
     const ps = p.get('picked'); if(ps !== null) { try { desiredStartFromURL = parseInt(ps,10); } catch(_){} }
   }
