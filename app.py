@@ -939,6 +939,7 @@ def create_booking(
 ):
     company = (company or "").strip()
     room = (room or "").strip()
+    email = (email or "").strip()
 
     if date not in EVENT_DATES:
         raise HTTPException(status_code=400, detail="Invalid date")
@@ -993,7 +994,7 @@ def create_booking(
         raise HTTPException(status_code=409, detail="Time slot blocked by administrator")
 
     # --- 저장 ---
-    insert_booking(date, room, tier, company_to_save, email.strip(), start_hour, blocks)
+    insert_booking(date, room, tier, company_to_save, email, start_hour, blocks)
 
     # 리다이렉트(입력 복원)
     params = {
@@ -1003,6 +1004,7 @@ def create_booking(
         "blocks": str(blocks),
         "picked": str(start_hour),
         "company": "Other" if company == "Other" else company_to_save,
+        "email": email,
     }
     if company == "Other":
         params["company_other"] = company_to_save
