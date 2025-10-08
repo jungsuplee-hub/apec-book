@@ -365,7 +365,8 @@
           ? `${info.start_display} ~ ${info.end_display}`
           : '';
         if(label){
-          notice.textContent = `현재 선택한 날짜는 예약 접수 시간이 아닙니다. 예약 가능 시간은 ${label} 입니다. 안내된 시간 외에는 예약이 불가능하오니 관리자에게 문의해 주세요.`;
+          notice.textContent = `The selected date is outside the reservation intake hours. The available reservation window is ${label}.
+Please contact the administrator if you need assistance outside the stated hours.`;
         }else{
           notice.textContent = '현재 예약을 접수할 수 없습니다. 관리자에게 문의해 주세요.';
         }
