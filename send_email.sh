@@ -160,7 +160,7 @@ for email, company, tier, room, sh, eh, dt in rows:
 def fmt_time(h): return f"{h:02d}:00"
 
 
-SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://99.79.51.11")
+SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "http://apecmeetingroom.com")
 
 def build_body(recipient, items):
     lines = []
