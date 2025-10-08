@@ -140,6 +140,7 @@
   const fmt = h => String(h).padStart(2,'0') + ':00';
 
   let desiredStartFromURL = null;
+  let desiredRoomFromURL = null;
   let windowAllowsBooking = true;
   let dailyLimitAllowsBooking = true;
 
@@ -200,7 +201,12 @@
     const previous = sel.value;
     const list = Array.isArray(codes) && codes.length ? codes : ALL_ROOMS;
     sel.innerHTML = list.map(code => `<option value="${code}">${ROOM_LABEL[code]||code}</option>`).join('');
-    if(previous && list.includes(previous)){
+    if(desiredRoomFromURL){
+      if(list.includes(desiredRoomFromURL)){
+        sel.value = desiredRoomFromURL;
+      }
+      desiredRoomFromURL = null;
+    } else if(previous && list.includes(previous)){
       sel.value = previous;
     } else if(list.length){
       sel.value = list[0];
@@ -440,7 +446,7 @@ Please contact the administrator if you need assistance outside the stated hours
     if (email){ $('#email').value = email; }
     $('#date').value = p.get('date') || defaultDate();
     const room = p.get('room');
-    if (room){ $('#room').value = room; }
+    if (room){ desiredRoomFromURL = room; }
     const b = parseInt(p.get('blocks')||'1',10); $('#blocks').value = (b===2?'2':'1');
     const ps = p.get('picked'); if(ps !== null) { try { desiredStartFromURL = parseInt(ps,10); } catch(_){} }
   }
